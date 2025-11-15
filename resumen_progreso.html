@@ -1,0 +1,80 @@
+<!-- templates/resumen_progreso.html -->
+{% extends "base.html" %}
+
+{% block title %}Resumen de Progreso - FocusFit{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="welcome-text-container mb-4">
+    <h2 class="fade-bounce">📊 Resumen de Todas las Semanas</h2>
+    <p class="fade-subtitle">Analiza tu evolución semana a semana</p>
+  </div>
+
+  {% if semanas %}
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Semana</th>
+                <th>Periodo</th>
+                <th>Actividades</th>
+                <th>Estudio</th>
+                <th>Ejercicio</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for semana in semanas %}
+                <tr class="{% if semana.offset == 0 %}table-primary{% endif %}">
+                  <td>
+                    <strong>Semana {{ semana.numero }}</strong>
+                    {% if semana.offset == 0 %}
+                      <span class="badge bg-primary ms-2">Actual</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ semana.lunes }} - {{ semana.domingo }}</td>
+                  <td>
+                    <div class="progress" style="height: 8px; width: 80px;">
+                      <div class="progress-bar bg-success" role="progressbar" 
+                           style="width: {{ semana.porcentaje }}%;" 
+                           aria-valuenow="{{ semana.porcentaje }}" 
+                           aria-valuemin="0" 
+                           aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-muted">{{ semana.porcentaje }}% ({{ semana.completadas }}/{{ semana.total }})</small>
+                  </td>
+                  <td>
+                    <span class="badge bg-info text-dark">{{ semana.horas_estudio }}h</span>
+                  </td>
+                  <td>
+                    <span class="badge bg-success">{{ semana.horas_ejercicio }}h</span>
+                  </td>
+                  <td>
+                    <a href="{{ url_for('progreso', semana_offset=semana.offset) }}" 
+                       class="btn btn-sm btn-outline-primary">
+                      Ver detalle
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="card shadow-sm">
+      <div class="card-body text-center">
+        <p class="text-muted">No hay datos de progreso disponibles.</p>
+        <a href="/crear_rutina" class="btn btn-primary">Crea tu primera rutina</a>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="mt-4 text-center">
+    <a href="{{ url_for('progreso') }}" class="btn btn-outline-primary">← Volver a Progreso Actual</a>
+  </div>
+</div>
+{% endblock %}

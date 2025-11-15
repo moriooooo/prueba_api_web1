@@ -1,0 +1,536 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}Estadísticas Globales - FocusFit Admin{% endblock %}
+
+{% block head %}
+<style>
+.stats-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 15px;
+  color: white;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.stats-icon {
+  font-size: 2rem;
+  opacity: 0.9;
+}
+
+.filter-card {
+  background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+  border: none;
+  border-radius: 15px;
+  color: white;
+  margin-bottom: 2rem;
+}
+
+.export-btn {
+  border-radius: 10px;
+  padding: 8px 20px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.table-responsive {
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.period-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.type-btn.active {
+  background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%);
+  color: white;
+  border: none;
+}
+
+/* Estilos para gráficos CSS */
+.chart-container {
+  position: relative;
+  background: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  min-height: 280px;
+}
+
+.chart-container .progress {
+  border-radius: 10px;
+  background-color: rgba(0,0,0,0.1);
+}
+
+.chart-container .progress-bar {
+  border-radius: 10px;
+  transition: width 0.6s ease;
+}
+
+/* Efectos hover para columnas */
+.chart-container [data-bs-toggle="tooltip"]:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="h3 mb-0">📊 Estadísticas Globales</h1>
+          <p class="text-muted">Análisis detallado del uso de la aplicación</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('admin.global_statistics', export='csv', tipo=filtro_tipo, periodo=periodo) }}" 
+             class="btn btn-outline-success export-btn">
+            <i class="fas fa-file-csv me-1"></i>Exportar CSV
+          </a>
+          <a href="{{ url_for('admin.global_statistics', export='pdf', tipo=filtro_tipo, periodo=periodo) }}" 
+             class="btn btn-outline-danger export-btn">
+            <i class="fas fa-file-pdf me-1"></i>Exportar PDF
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card filter-card">
+        <div class="card-body">
+          <h5 class="card-title mb-3">🔍 Filtros de Análisis</h5>
+          
+          <!-- Filtros de Período -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Período de Análisis:</label>
+            <div class="btn-group" role="group">
+              <a href="{{ url_for('admin.global_statistics', tipo=filtro_tipo, periodo='semana') }}" 
+                 class="btn btn-outline-primary period-btn {{ 'active' if periodo == 'semana' else '' }}">
+                📅 Última Semana
+              </a>
+              <a href="{{ url_for('admin.global_statistics', tipo=filtro_tipo, periodo='mes') }}" 
+                 class="btn btn-outline-primary period-btn {{ 'active' if periodo == 'mes' else '' }}">
+                📅 Último Mes
+              </a>
+              <a href="{{ url_for('admin.global_statistics', tipo=filtro_tipo, periodo='año') }}" 
+                 class="btn btn-outline-primary period-btn {{ 'active' if periodo == 'año' else '' }}">
+                📅 Último Año
+              </a>
+            </div>
+          </div>
+          
+          <!-- Filtros de Tipo -->
+          <div class="mb-0">
+            <label class="form-label fw-bold">Tipo de Actividad:</label>
+            <div class="btn-group" role="group">
+              <a href="{{ url_for('admin.global_statistics', tipo=None, periodo=periodo) }}" 
+                 class="btn btn-outline-success type-btn {{ 'active' if not filtro_tipo else '' }}">
+                🔄 Todas las Actividades
+              </a>
+              <a href="{{ url_for('admin.global_statistics', tipo='ejercicio', periodo=periodo) }}" 
+                 class="btn btn-outline-success type-btn {{ 'active' if filtro_tipo == 'ejercicio' else '' }}">
+                💪 Solo Ejercicio
+              </a>
+              <a href="{{ url_for('admin.global_statistics', tipo='estudio', periodo=periodo) }}" 
+                 class="btn btn-outline-success type-btn {{ 'active' if filtro_tipo == 'estudio' else '' }}">
+                📚 Solo Estudio
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estadísticas Principales -->
+  <div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card stats-card h-100">
+        <div class="card-body text-center">
+          <div class="stats-icon mb-2">
+            <i class="fas fa-users"></i>
+          </div>
+          <h3 class="mb-1">{{ stats.usuarios_totales or 0 }}</h3>
+          <p class="mb-0 opacity-75">Usuarios Totales</p>
+          <small class="opacity-50">{{ stats.usuarios_activos or 0 }} activos en el período</small>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card stats-card h-100">
+        <div class="card-body text-center">
+          <div class="stats-icon mb-2">
+            <i class="fas fa-list-check"></i>
+          </div>
+          <h3 class="mb-1">{{ stats.rutinas_creadas or 0 }}</h3>
+          <p class="mb-0 opacity-75">Rutinas Creadas</p>
+          <small class="opacity-50">{{ stats.rutinas_ejercicio or 0 }} ejercicio, {{ stats.rutinas_estudio or 0 }} estudio</small>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card stats-card h-100">
+        <div class="card-body text-center">
+          <div class="stats-icon mb-2">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <h3 class="mb-1">{{ stats.actividades_completadas or 0 }}</h3>
+          <p class="mb-0 opacity-75">Actividades Completadas</p>
+          <small class="opacity-50">{{ stats.actividades_ejercicio or 0 }} ejercicio, {{ stats.actividades_estudio or 0 }} estudio</small>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card stats-card h-100">
+        <div class="card-body text-center">
+          <div class="stats-icon mb-2">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          {% set tasa_completado = (stats.usuarios_activos / stats.usuarios_totales * 100) if stats.usuarios_totales and stats.usuarios_totales > 0 else 0 %}
+          <h3 class="mb-1">{{ "%.1f"|format(tasa_completado) }}%</h3>
+          <p class="mb-0 opacity-75">Tasa de Usuarios Activos</p>
+          <small class="opacity-50">Usuarios activos vs Totales</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficos -->
+  <div class="row mb-4">
+    <!-- Gráfico de Uso por Período -->
+    <div class="col-lg-8 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">📈 Actividades Completadas por Mes</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <div class="text-center mb-3">
+              <h6 class="text-muted fw-medium">Progreso Mensual de Actividades</h6>
+            </div>
+            
+            <!-- Eje Y (números) -->
+            <div class="position-absolute" style="left: 15px; top: 50px; bottom: 80px; width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: end;">
+              {% for i in range(21) %}
+                <span class="text-muted" style="font-size: 0.75rem;">{{ i }}</span>
+              {% endfor %}
+            </div>
+            
+            <!-- Área del gráfico -->
+            <div class="position-relative" style="margin-left: 55px; margin-right: 20px; height: 240px; border-left: 2px solid #dee2e6; border-bottom: 2px solid #dee2e6; display: flex; align-items: end; justify-content: space-around; gap: 8px;">
+              <!-- Líneas de referencia horizontales -->
+              <div class="position-absolute w-100 h-100" style="top: 0; left: 0; pointer-events: none;">
+                {% for i in range(1, 21) %}
+                  <div class="position-absolute w-100 border-bottom border-secondary opacity-25" 
+                       style="bottom: {{ (i / 20 * 220) }}px;"></div>
+                {% endfor %}
+              </div>
+              
+              <!-- Columnas de datos -->
+              {% if stats.uso_por_periodo and stats.uso_por_periodo|length > 0 and stats.actividades_completadas > 0 %}
+                {% for dato in stats.uso_por_periodo %}
+                  <div class="d-flex flex-column align-items-center" style="flex: 1; max-width: 80px;">
+                    <!-- Columna principal -->
+                    <div class="position-relative rounded-top shadow-sm"
+                         data-bs-toggle="tooltip" 
+                         data-bs-placement="top" 
+                         title="{{ dato.actividades }} actividades completadas"
+                         style="width: 70%; 
+                                height: {{ (dato.actividades / 20 * 220) if dato.actividades else 2 }}px; 
+                                background: {% if dato.actividades > 0 %}linear-gradient(135deg, #667eea, #764ba2){% else %}linear-gradient(135deg, #6c757d, #495057){% endif %};
+                                border-radius: 6px 6px 0 0;
+                                transition: all 0.3s ease;
+                                cursor: pointer;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                      
+                      <!-- Número de actividades -->
+                      {% if dato.actividades > 0 %}
+                        <span class="position-absolute text-white fw-bold d-flex align-items-center justify-content-center"
+                              style="top: -30px; left: 50%; transform: translateX(-50%); 
+                                     background: rgba(0,0,0,0.7); 
+                                     border-radius: 12px; 
+                                     width: 24px; height: 20px; 
+                                     font-size: 0.75rem;">
+                          {{ dato.actividades }}
+                        </span>
+                      {% endif %}
+                    </div>
+                    
+                    <!-- Etiqueta del día -->
+                    <small class="text-muted text-center mt-2 fw-medium" style="font-size: 0.7rem; white-space: nowrap;">
+                      {{ dato.fecha }}
+                    </small>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <!-- Sin datos disponibles -->
+                <div class="d-flex align-items-center justify-content-center h-100 w-100">
+                  <div class="text-center">
+                    <i class="fas fa-chart-bar text-muted mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <h6 class="text-muted">Sin datos disponibles</h6>
+                    <p class="text-muted small">No hay actividades registradas en este período</p>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Gráfico de Distribución por Tipo -->
+    <div class="col-lg-4 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">🎯 Distribución por Tipo</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            {% if stats.actividades_por_tipo and stats.actividades_por_tipo|length > 0 and stats.actividades_completadas > 0 %}
+              {% set total_actividades = stats.actividades_por_tipo | map(attribute='total') | sum %}
+              {% set tipos_data = stats.actividades_por_tipo %}
+              
+              <div class="text-center mb-3">
+                <h6 class="text-muted fw-medium">Tipos de Actividades</h6>
+              </div>
+              
+              <!-- Gráfico de barras horizontales -->
+              <div class="mb-4">
+                {% for tipo in tipos_data %}
+                  {% set porcentaje = (tipo.total / total_actividades * 100) | round(1) if total_actividades > 0 else 0 %}
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="fw-medium text-capitalize">{{ tipo.tipo_actividad or tipo.tipo }}</span>
+                      <span class="text-muted">{{ tipo.total }} ({{ porcentaje }}%)</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                      <div class="progress-bar" 
+                           style="width: {{ porcentaje }}%; background-color: {% if tipo.tipo_actividad == 'ejercicio' %}#667eea{% elif tipo.tipo_actividad == 'estudio' %}#43a047{% else %}#ff9800{% endif %};"
+                           role="progressbar">
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+              
+              <!-- Resumen total -->
+              <div class="text-center p-3 bg-light rounded">
+                <h4 class="text-primary mb-1">{{ total_actividades }}</h4>
+                <small class="text-muted">Total de Actividades</small>
+              </div>
+            {% else %}
+              <!-- Sin datos disponibles -->
+              <div class="d-flex align-items-center justify-content-center h-100 w-100" style="min-height: 200px;">
+                <div class="text-center">
+                  <i class="fas fa-chart-pie text-muted mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                  <h6 class="text-muted">Sin actividades registradas</h6>
+                  <p class="text-muted small">No hay datos de actividades para mostrar</p>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico de Crecimiento -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">👥 Crecimiento de Usuarios por Mes</h5>
+        </div>
+        <div class="card-body">
+          <div class="chart-container">
+            <div class="text-center mb-3">
+              <h6 class="text-muted fw-medium">Nuevos Registros Mensuales</h6>
+            </div>
+            
+            <!-- Eje Y (números) -->
+            <div class="position-absolute" style="left: 15px; top: 50px; bottom: 80px; width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: end;">
+              {% for i in range(6) %}
+                <span class="text-muted" style="font-size: 0.75rem;">{{ i }}</span>
+              {% endfor %}
+            </div>
+            
+            <!-- Área del gráfico -->
+            <div class="position-relative" style="margin-left: 55px; margin-right: 20px; height: 180px; border-left: 2px solid #dee2e6; border-bottom: 2px solid #dee2e6; display: flex; align-items: end; justify-content: space-around; gap: 8px;">
+              <!-- Líneas de referencia horizontales -->
+              <div class="position-absolute w-100 h-100" style="top: 0; left: 0; pointer-events: none;">
+                {% for i in range(1, 6) %}
+                  <div class="position-absolute w-100 border-bottom border-secondary opacity-25" 
+                       style="bottom: {{ (i / 5 * 160) }}px;"></div>
+                {% endfor %}
+              </div>
+              
+              <!-- Columnas de crecimiento -->
+              {% if stats.crecimiento_usuarios and stats.crecimiento_usuarios|length > 0 and stats.usuarios_totales > 0 %}
+                {% for dato in stats.crecimiento_usuarios %}
+                  <div class="d-flex flex-column align-items-center" style="flex: 1; max-width: 80px;">
+                    <!-- Columna principal -->
+                    <div class="position-relative rounded-top shadow-sm"
+                         data-bs-toggle="tooltip" 
+                         data-bs-placement="top" 
+                         title="{{ dato.nuevos_usuarios }} nuevos usuarios"
+                         style="width: 70%; 
+                                height: {{ (dato.nuevos_usuarios / 5 * 160) if dato.nuevos_usuarios else 5 }}px; 
+                                background: {% if dato.nuevos_usuarios == 0 %}linear-gradient(135deg, #6c757d, #495057){% else %}linear-gradient(135deg, #43a047, #66bb6a){% endif %};
+                                border-radius: 6px 6px 0 0;
+                                transition: all 0.3s ease;
+                                cursor: pointer;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                      
+                      <!-- Número de usuarios -->
+                      {% if dato.nuevos_usuarios > 0 %}
+                        <span class="position-absolute text-white fw-bold d-flex align-items-center justify-content-center"
+                              style="top: -30px; left: 50%; transform: translateX(-50%); 
+                                     background: rgba(0,0,0,0.7); 
+                                     border-radius: 12px; 
+                                     width: 24px; height: 20px; 
+                                     font-size: 0.75rem;">
+                          {{ dato.nuevos_usuarios }}
+                        </span>
+                      {% endif %}
+                    </div>
+                    
+                    <!-- Etiqueta del día -->
+                    <small class="text-muted text-center mt-2 fw-medium" style="font-size: 0.7rem; white-space: nowrap;">
+                      {{ dato.fecha }}
+                    </small>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <!-- Sin datos disponibles -->
+                <div class="d-flex align-items-center justify-content-center h-100 w-100">
+                  <div class="text-center">
+                    <i class="fas fa-user-plus text-muted mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <h6 class="text-muted">Sin registros de usuarios</h6>
+                    <p class="text-muted small">No hay nuevos usuarios en este período</p>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tablas de Rankings -->
+  <div class="row">
+    <!-- Rutinas Más Populares -->
+    <div class="col-lg-6 mb-4">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th colspan="3" class="text-center">
+                <i class="fas fa-trophy me-2"></i>Rutinas Más Populares
+              </th>
+            </tr>
+            <tr>
+              <th>Rutina</th>
+              <th>Tipo</th>
+              <th>Usos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rutina in stats.rutinas_mas_populares[:10] %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <i class="fas fa-{{ 'dumbbell' if rutina.tipo == 'ejercicio' else 'book' }} me-2 text-primary"></i>
+                  {{ rutina.nombre[:30] }}{% if rutina.nombre|length > 30 %}...{% endif %}
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-{{ 'success' if rutina.tipo == 'ejercicio' else 'info' }}">
+                  {{ rutina.tipo.title() }}
+                </span>
+              </td>
+              <td class="fw-bold">{{ rutina.usos or 0 }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="3" class="text-center text-muted">No hay datos disponibles</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Usuarios Más Activos -->
+    <div class="col-lg-6 mb-4">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th colspan="2" class="text-center">
+                <i class="fas fa-star me-2"></i>Usuarios Más Activos
+              </th>
+            </tr>
+            <tr>
+              <th>Usuario</th>
+              <th>Actividades</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for usuario in stats.usuarios_mas_activos[:10] %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <i class="fas fa-user-circle me-2 text-primary"></i>
+                  {{ usuario.nombre }} {{ usuario.apellido }}
+                </div>
+              </td>
+              <td class="fw-bold">{{ usuario.actividades_completadas or 0 }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="2" class="text-center text-muted">No hay usuarios activos</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Inicializar tooltips de Bootstrap
+document.addEventListener('DOMContentLoaded', function() {
+  // Inicializar todos los tooltips
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+    return new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+  
+  console.log('✅ Gráficos CSS cargados exitosamente');
+  console.log('✅ Tooltips inicializados:', tooltipList.length);
+});
+</script>
+{% endblock %}

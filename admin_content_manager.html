@@ -1,0 +1,300 @@
+{% extends 'admin/admin_layout.html' %}
+{% block title %}Gestión de contenido - {{ type }}{% endblock %}
+{% block content %}
+  <h2>Gestión de contenido - {{ type }}</h2>
+  
+  {% if type != 'recommendation' %}
+  <div class="card p-3 mb-3">
+    <form method="post" enctype="multipart/form-data" class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label">Título</label>
+        <input name="title" required class="form-control">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Resumen / Body</label>
+        <input name="body" class="form-control">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Imagen</label>
+        <input type="file" name="image" accept="image/*" class="form-control">
+      </div>
+      <div class="col-12 text-end">
+        <button class="btn btn-success">Crear</button>
+      </div>
+    </form>
+  </div>
+  {% else %}
+  <div class="alert alert-info">
+    <strong>Moderación de Recomendaciones</strong><br>
+    Esta sección permite únicamente eliminar recomendaciones que violen las normas de la comunidad. Las recomendaciones son creadas por los usuarios de la aplicación.
+  </div>
+  {% endif %}
+
+  <div class="list-group">
+    {% for it in items %}
+      <div class="list-group-item d-flex justify-content-between align-items-start">
+        <div>
+          <div class="fw-bold">{{ it.titulo or it.title }}</div>
+          <div class="text-muted small">{{ it.actualizado_en or it.created_at }}</div>
+          {% if type == 'recommendation' %}
+            <div class="small">
+              <span class="badge bg-secondary">{{ it.difficulty or 'medio' }}</span>
+              {% if it.duration_minutes %}
+                <span class="badge bg-info">{{ it.duration_minutes }} min</span>
+              {% endif %}
+              {% if it.is_public %}
+                <span class="badge bg-success">Público</span>
+              {% else %}
+                <span class="badge bg-warning">Privado</span>
+              {% endif %}
+            </div>
+          {% endif %}
+          <div class="mt-2">{{ (it.texto or it.body or it.summary)[:150] }}{% if (it.texto or it.body or it.summary)|length > 150 %}...{% endif %}</div>
+        </div>
+        <div class="text-end">
+          {% if it.url_imagen or it.image %}
+            {% if type == 'recommendation' and it.image %}
+              <img src="{{ url_for('static', filename='img/community/' ~ it.image) }}" 
+                   style="max-width:140px; max-height:100px; object-fit:cover; cursor:pointer;" 
+                   class="mb-2 rounded image-preview" 
+                   data-bs-toggle="modal" 
+                   data-bs-target="#imageModal"
+                   data-image-src="{{ url_for('static', filename='img/community/' ~ it.image) }}"
+                   data-image-title="{{ it.title }}"
+                   onerror="this.parentElement.innerHTML='<div class=&quot;bg-secondary text-light d-flex align-items-center justify-content-center mb-2 rounded&quot; style=&quot;width:140px; height:100px; font-size:12px;&quot;>Imagen no encontrada</div>'">
+            {% elif it.url_imagen %}
+              <img src="{{ url_for('static', filename='img/admin_avatars/' ~ it.url_imagen) }}" 
+                   style="max-width:140px; max-height:100px; object-fit:cover; cursor:pointer;" 
+                   class="mb-2 rounded image-preview" 
+                   data-bs-toggle="modal" 
+                   data-bs-target="#imageModal"
+                   data-image-src="{{ url_for('static', filename='img/admin_avatars/' ~ it.url_imagen) }}"
+                   data-image-title="{{ it.titulo or it.title }}"
+                   onerror="this.parentElement.innerHTML='<div class=&quot;bg-secondary text-light d-flex align-items-center justify-content-center mb-2 rounded&quot; style=&quot;width:140px; height:100px; font-size:12px;&quot;>Imagen no encontrada</div>'">
+            {% else %}
+              <div class="bg-secondary text-light d-flex align-items-center justify-content-center mb-2 rounded" style="width:140px; height:100px; font-size:12px;">
+                Sin imagen
+              </div>
+            {% endif %}
+          {% else %}
+            <div class="bg-secondary text-light d-flex align-items-center justify-content-center mb-2 rounded" style="width:140px; height:100px; font-size:12px;">
+              Sin imagen
+            </div>
+          {% endif %}
+          <div>
+            {% if type == 'recommendation' %}
+              <button class="btn btn-sm btn-outline-info me-1" data-bs-toggle="modal" data-bs-target="#detailsModal{{ it.id }}">
+                Ver detalles
+              </button>
+              <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteRecModal{{ it.id }}">
+                Eliminar
+              </button>
+            {% else %}
+              <button class="btn btn-sm btn-outline-info me-1" data-bs-toggle="modal" data-bs-target="#detailsModal{{ it.id }}">
+                Ver detalles
+              </button>
+              <form action="{{ url_for('admin.content_delete', item_id=it.id) }}" method="post" style="display:inline">
+                <button class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Estás seguro de eliminar este contenido?')">Eliminar</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal para ver detalles -->
+      <div class="modal fade" id="detailsModal{{ it.id }}" tabindex="-1" aria-labelledby="detailsModalLabel{{ it.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="detailsModalLabel{{ it.id }}">
+                {% if type == 'recommendation' %}
+                  Detalles de Recomendación
+                {% else %}
+                  Detalles de Contenido
+                {% endif %}
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-md-8">
+                  <h6 class="fw-bold text-primary">Título</h6>
+                  <p>{{ it.titulo or it.title }}</p>
+                  
+                  {% if type == 'recommendation' %}
+                    <h6 class="fw-bold text-primary">Resumen</h6>
+                    <p>{{ it.summary or 'Sin resumen' }}</p>
+                    
+                    <h6 class="fw-bold text-primary">Contenido completo</h6>
+                    <div class="bg-dark p-3 rounded" style="max-height: 200px; overflow-y: auto;">
+                      <pre class="text-light mb-0">{{ it.body or 'Sin contenido detallado' }}</pre>
+                    </div>
+                    
+                    <div class="row mt-3">
+                      <div class="col-md-6">
+                        <h6 class="fw-bold text-primary">Dificultad</h6>
+                        <span class="badge 
+                          {% if it.difficulty == 'facil' %}bg-success
+                          {% elif it.difficulty == 'medio' %}bg-warning
+                          {% else %}bg-danger{% endif %}">
+                          {{ it.difficulty|title or 'Medio' }}
+                        </span>
+                      </div>
+                      <div class="col-md-6">
+                        <h6 class="fw-bold text-primary">Duración</h6>
+                        <p>{{ it.duration_minutes or 'No especificada' }}{% if it.duration_minutes %} minutos{% endif %}</p>
+                      </div>
+                    </div>
+                    
+                    <div class="row">
+                      <div class="col-md-6">
+                        <h6 class="fw-bold text-primary">Tipo</h6>
+                        <p>{{ it.tipo|title or 'Ejercicio' }}</p>
+                      </div>
+                      <div class="col-md-6">
+                        <h6 class="fw-bold text-primary">Visibilidad</h6>
+                        <span class="badge {% if it.is_public %}bg-success{% else %}bg-secondary{% endif %}">
+                          {% if it.is_public %}Público{% else %}Privado{% endif %}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <h6 class="fw-bold text-primary mt-3">Información de creación</h6>
+                    <p><strong>Creado por:</strong> {{ it.created_by or 'Sistema' }}</p>
+                    <p><strong>Fecha:</strong> {{ it.created_at or it.updated_at }}</p>
+                  {% else %}
+                    <h6 class="fw-bold text-primary">Tipo de contenido</h6>
+                    <p>{{ type|title }}</p>
+                    
+                    <h6 class="fw-bold text-primary">Contenido</h6>
+                    <div class="bg-dark p-3 rounded" style="max-height: 300px; overflow-y: auto;">
+                      <pre class="text-light mb-0">{{ it.texto or 'Sin contenido' }}</pre>
+                    </div>
+                    
+                    <h6 class="fw-bold text-primary mt-3">Información de actualización</h6>
+                    <p><strong>Actualizado por:</strong> {{ it.actualizado_por or 'Sistema' }}</p>
+                    <p><strong>Fecha:</strong> {{ it.actualizado_en }}</p>
+                  {% endif %}
+                </div>
+                <div class="col-md-4">
+                  {% if it.url_imagen or it.image %}
+                    <h6 class="fw-bold text-primary">Imagen</h6>
+                    {% if type == 'recommendation' and it.image %}
+                      <img src="{{ url_for('static', filename='img/community/' ~ it.image) }}" 
+                           style="width: 100%; max-height: 200px; object-fit: cover; cursor: pointer;" 
+                           class="rounded mb-3" 
+                           data-bs-toggle="modal" 
+                           data-bs-target="#imageModal"
+                           data-image-src="{{ url_for('static', filename='img/community/' ~ it.image) }}"
+                           data-image-title="{{ it.title }}"
+                           onerror="this.parentElement.innerHTML='<div class=&quot;bg-secondary text-light d-flex align-items-center justify-content-center rounded&quot; style=&quot;height:200px;&quot;>Imagen no encontrada</div>'">
+                    {% elif it.url_imagen %}
+                      <img src="{{ url_for('static', filename='img/admin_avatars/' ~ it.url_imagen) }}" 
+                           style="width: 100%; max-height: 200px; object-fit: cover; cursor: pointer;" 
+                           class="rounded mb-3" 
+                           data-bs-toggle="modal" 
+                           data-bs-target="#imageModal"
+                           data-image-src="{{ url_for('static', filename='img/admin_avatars/' ~ it.url_imagen) }}"
+                           data-image-title="{{ it.titulo or it.title }}"
+                           onerror="this.parentElement.innerHTML='<div class=&quot;bg-secondary text-light d-flex align-items-center justify-content-center rounded&quot; style=&quot;height:200px;&quot;>Imagen no encontrada</div>'">
+                    {% endif %}
+                    <small class="text-muted">Clic para ver en tamaño completo</small>
+                  {% else %}
+                    <div class="bg-secondary text-light d-flex align-items-center justify-content-center rounded" style="height: 200px;">
+                      Sin imagen
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+              {% if type == 'recommendation' %}
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteRecModal{{ it.id }}" data-bs-dismiss="modal">
+                  Eliminar Recomendación
+                </button>
+              {% else %}
+                <button class="btn btn-danger" onclick="if(confirm('¿Estás seguro de eliminar este contenido?')) { document.getElementById('deleteForm{{ it.id }}').submit(); }">
+                  Eliminar Contenido
+                </button>
+                <form id="deleteForm{{ it.id }}" action="{{ url_for('admin.content_delete', item_id=it.id) }}" method="post" style="display:none;"></form>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% if type == 'recommendation' %}
+      <!-- Modal para eliminar recomendación -->
+      <div class="modal fade" id="deleteRecModal{{ it.id }}" tabindex="-1" aria-labelledby="deleteRecModalLabel{{ it.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="deleteRecModalLabel{{ it.id }}">Eliminar Recomendación</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('admin.delete_recommendation', recommendation_id=it.id) }}" method="post">
+              <div class="modal-body">
+                <p>¿Estás seguro de que quieres eliminar la recomendación "<strong>{{ it.title }}</strong>"?</p>
+                <div class="alert alert-warning">
+                  <small><strong>Nota:</strong> Esta acción no se puede deshacer. La recomendación será eliminada permanentemente del sistema.</small>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-danger">Eliminar Recomendación</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    {% endfor %}
+    {% if not items %}
+      <div class="list-group-item">No hay contenidos</div>
+    {% endif %}
+  </div>
+
+  <!-- Modal para vista completa de imagen -->
+  <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="imageModalLabel">Vista de imagen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img id="modalImage" src="" alt="Imagen completa" style="max-width: 100%; max-height: 70vh; object-fit: contain;" class="rounded">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <a id="downloadImageBtn" href="" download class="btn btn-primary">Descargar imagen</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Script para manejar el modal de imagen
+    document.addEventListener('DOMContentLoaded', function() {
+      const imageModal = document.getElementById('imageModal');
+      const modalImage = document.getElementById('modalImage');
+      const modalTitle = document.getElementById('imageModalLabel');
+      const downloadBtn = document.getElementById('downloadImageBtn');
+      
+      if (imageModal) {
+        imageModal.addEventListener('show.bs.modal', function (event) {
+          const button = event.relatedTarget;
+          const imageSrc = button.getAttribute('data-image-src');
+          const imageTitle = button.getAttribute('data-image-title') || 'Imagen';
+          
+          modalImage.src = imageSrc;
+          modalTitle.textContent = 'Vista de imagen - ' + imageTitle;
+          downloadBtn.href = imageSrc;
+          downloadBtn.download = imageTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.jpg';
+        });
+      }
+    });
+  </script>
+{% endblock %}

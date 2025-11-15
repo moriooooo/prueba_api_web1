@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FocusFit: Organiza tus rutinas de estudio y ejercicio y alcanza tus objetivos">
+  <meta name="author" content="La Gran Luna">
+  <title>{% block title %}FocusFit{% endblock %}</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="{{ url_for('static', filename='img/logo_blanco.png') }}" type="image/png">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+  <!-- Fuentes -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- CSS personalizado -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      font-family: 'Inter', sans-serif;
+      background-color: #f8f9fa;
+      padding-top: 56px; /* Reducido de 72px a 56px */
+    }
+
+    main {
+      flex: 1 0 auto; /* contenido principal ocupa el espacio disponible */
+    }
+
+    .site-navbar {
+      z-index: 1050;
+      background: linear-gradient(135deg, #295bbe 0%, #4a90e2 100%);
+      box-shadow: 0 2px 12px rgba(41, 91, 190, 0.15);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      min-height: 56px; /* Altura fija más pequeña */
+      padding: 0.5rem 0; /* Reducido el padding vertical */
+    }
+
+    footer {
+      flex-shrink: 0;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
+    }
+
+    .alert {
+      transition: all 0.3s ease;
+    }
+
+    .navbar-nav .nav-link:hover {
+      color: #ffd966;
+      text-decoration: underline;
+      transition: color 0.3s ease, text-decoration 0.3s ease;
+    }
+
+    /* Botón de toggle en navbar */
+    .navbar-toggle-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      font-size: 16px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      width: 36px;
+      height: 36px;
+    }
+
+    .navbar-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .navbar-toggle-btn:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+    }
+
+    /* Indicador visual cuando sidebar está colapsada */
+    .navbar-toggle-btn.collapsed::after {
+      content: '';
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      width: 6px;
+      height: 6px;
+      background: #ffd966;
+      border-radius: 50%;
+      border: 2px solid #295bbe;
+    }
+
+    /* Mejoras responsive para el navbar */
+    .navbar-brand {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .navbar-brand img {
+      height: 28px; /* Reducido de 36px */
+    }
+
+    /* Avatar en navbar más compacto */
+    .navbar .nav-item img {
+      width: 32px !important;
+      height: 32px !important;
+      border: 2px solid rgba(255, 255, 255, 0.2) !important;
+    }
+
+    /* Responsive para pantallas pequeñas */
+    @media (max-width: 768px) {
+      body {
+        padding-top: 50px; /* Aún más pequeño en móvil */
+      }
+      
+      .site-navbar {
+        min-height: 50px;
+        padding: 0.25rem 0;
+      }
+      
+      .navbar-brand {
+        font-size: 1rem;
+      }
+      
+      .navbar-brand img {
+        height: 24px;
+      }
+      
+      .navbar-toggle-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+        padding: 4px 6px;
+      }
+      
+      .navbar .nav-item img {
+        width: 28px !important;
+        height: 28px !important;
+      }
+      
+      .navbar-nav .nav-link {
+        font-size: 0.9rem;
+        padding: 0.25rem 0.5rem;
+      }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark fixed-top site-navbar">
+    <div class="container-fluid px-3">
+      <!-- Botón de toggle de sidebar -->
+      <button class="navbar-toggle-btn me-2" onclick="toggleSidebar()" id="sidebarToggleBtn">
+        <i class="fas fa-bars"></i>
+      </button>
+      
+      <a class="navbar-brand d-flex align-items-center" href="/">
+        <img src="{{ url_for('static', filename='img/logo_blanco.png') }}" alt="Logo" class="me-2">
+        <span class="fw-bold">Focus Fit</span>
+      </a>
+      
+      <div class="navbar-nav ms-auto d-flex flex-row align-items-center">
+        <!-- Avatar en la navbar -->
+        <div class="nav-item d-flex align-items-center me-2">
+          {% if usuario and usuario.avatar %}
+            <a href="/perfil" class="d-flex align-items-center text-decoration-none text-white">
+              <img src="{{ url_for('static', filename='img/avatars/' + usuario.avatar) }}" alt="Avatar" class="rounded-circle">
+            </a>
+          {% else %}
+            <a href="/perfil" class="d-flex align-items-center text-decoration-none text-white">
+              <img src="{{ url_for('static', filename='img/logo_blanco.png') }}" alt="Avatar" class="rounded-circle bg-white">
+            </a>
+          {% endif %}
+        </div>
+        
+        <a class="nav-link position-relative me-1" href="/notifications">
+          <i class="fas fa-bell"></i>
+          {% if user_unread_notifications and user_unread_notifications > 0 %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">{{ user_unread_notifications }}</span>
+          {% endif %}
+        </a>
+        
+        <a class="nav-link me-1" href="/perfil">Perfil</a>
+        <a class="nav-link" href="/logout">Cerrar sesión</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Contenido principal con sidebar -->
+  <main class="d-flex flex-grow-1">
+    {% include 'Sidebar.html' %}
+    <div class="flex-grow-1 container mt-4">
+
+      <!-- Flash messages -->
+      {% set messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="mt-2">
+        {% for category, msg in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+          {{ msg }}
+        </div>
+        {% endfor %}
+      </div>
+      <script>
+        setTimeout(function(){
+          const alerts = document.querySelectorAll('.alert');
+          alerts.forEach(a => {
+            a.classList.remove('show');
+            a.classList.add('hide');
+            a.style.display = 'none';
+          });
+        }, 1500);
+      </script>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- Footer fijo abajo -->
+  <footer class="text-center py-3 mt-5 bg-dark text-white">
+    <p>© 2025 FocusFit | Desarrollado por La Gran Luna</p>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  {% block extra_scripts %}{% endblock %}
+
+{% include 'notifications.html' %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-marcar').forEach(button => {
+        button.addEventListener('click', async function() {
+            const idItem = parseInt(this.getAttribute('data-id'));
+            const diaActual = this.getAttribute('data-dia'); // "Lun", "Mar", etc.
+            const boton = this;
+            const completadoActual = boton.getAttribute('data-completado') === 'true';
+
+            if (isNaN(idItem) || idItem <= 0) return;
+
+            boton.disabled = true;
+
+            try {
+                // Usar la nueva ruta /marcar_item
+                const response = await fetch('/marcar_item', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify({
+                        id: idItem,
+                        completado: !completadoActual
+                    })
+                });
+
+                if (response.status === 401) {
+                    alert('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Actualizar el botón
+                    if (data.completado) {
+                        boton.className = 'btn btn-sm btn-success btn-marcar';
+                        boton.innerHTML = '✓ Completado';
+                        boton.setAttribute('data-completado', 'true');
+                    } else {
+                        boton.className = 'btn btn-sm btn-outline-success btn-marcar';
+                        boton.innerHTML = 'Hecho';
+                        boton.setAttribute('data-completado', 'false');
+                    }
+
+                    // Disparar evento personalizado para que otras páginas puedan reaccionar
+                    window.dispatchEvent(new CustomEvent('taskCompleted', {
+                        detail: {
+                            success: true,
+                            completado: data.completado,
+                            itemId: idItem,
+                            streakDays: data.streak_days,
+                            rachaActiva: data.racha_activa,
+                            diaActual: diaActual
+                        }
+                    }));
+
+                    // ✅ Actualizar gráfica de progreso diario SOLO en páginas que NO sean inicio
+                    if (window.location.pathname !== '/' && diaActual) {
+                        actualizarProgresoDiario(diaActual);
+                    }
+
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo actualizar el estado.'));
+                }
+            } catch (error) {
+                console.error('Error en la solicitud AJAX:', error);
+                alert('No se pudo conectar con el servidor. Verifica tu conexión.');
+            } finally {
+                boton.disabled = false;
+            }
+        });
+    });
+
+    // Función para actualizar porcentaje en la gráfica diaria (para páginas que no sean inicio)
+    function actualizarProgresoDiario(diaCorto) {
+        const columnas = document.querySelectorAll('.col.text-center');
+        let columnaDia = null;
+
+        for (let col of columnas) {
+            const textoDia = col.querySelector('.small.text-muted');
+            if (textoDia && textoDia.textContent.trim() === diaCorto) {
+                columnaDia = col;
+                break;
+            }
+        }
+        if (!columnaDia) return;
+
+        const porcentajeElement = columnaDia.querySelector('strong');
+        if (!porcentajeElement) return;
+
+        // Contar tareas completadas vs total de tareas del día actual
+        const tareasCompletadas = document.querySelectorAll(`.btn-marcar[data-completado="true"]`).length;
+        const totalTareas = document.querySelectorAll('.btn-marcar').length;
+
+        // Calcular porcentaje actual
+        const nuevoPorcentaje = totalTareas === 0 ? 0 : Math.round((tareasCompletadas / totalTareas) * 100);
+        porcentajeElement.textContent = nuevoPorcentaje + '%';
+    }
+});
+</script>
+
+
+
+
+
+</body>
+</html>

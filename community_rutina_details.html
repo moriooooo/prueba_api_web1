@@ -1,0 +1,431 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ post.title }} - Rutina Comunidad{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<style>
+.routine-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #667eea 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(13, 110, 253, 0.2);
+}
+.routine-image {
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+.item-card {
+    border-left: 4px solid #0d6efd;
+    transition: transform 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.item-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+}
+.priority-alta { border-left-color: #e74c3c; }
+.priority-media { border-left-color: #f39c12; }
+.priority-baja { border-left-color: #27ae60; }
+.days-badge {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    padding: 0.25rem 0.5rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    margin: 0.1rem;
+    display: inline-block;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Botón volver -->
+    <div class="mb-3">
+        <a href="{{ url_for('community_public') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a Comunidad
+        </a>
+    </div>
+
+    <!-- Cabecera de la rutina -->
+    <div class="routine-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2">{{ post.title }}</h1>
+                <p class="mb-2">
+                    <i class="fas fa-user"></i> Por: {{ post.user_name }}
+                    {% if post.rutina_tipo %}
+                        • <i class="fas fa-tag"></i> {{ post.rutina_tipo|title }}
+                    {% endif %}
+                </p>
+                <p class="mb-2">
+                    <i class="fas fa-clock"></i> 
+                    {% if post.duracion_horas and post.duracion_horas > 0 %}
+                        {{ post.duracion_horas }}h 
+                    {% endif %}
+                    {% if post.duracion_minutos and post.duracion_minutos > 0 %}
+                        {{ post.duracion_minutos }}min
+                    {% endif %}
+                    {% if post.horario %}
+                        • <i class="fas fa-calendar-clock"></i> {{ post.horario }}
+                    {% endif %}
+                </p>
+                {% if post.summary %}
+                <p class="mb-0">{{ post.summary }}</p>
+                {% endif %}
+            </div>
+            <div class="col-md-4 text-center">
+                {% if post.image %}
+                    <img src="{{ url_for('static', filename='img/community/' ~ post.image) }}" 
+                         alt="Imagen de rutina" class="routine-image img-fluid"
+                         onclick="openImageModal('{{ url_for('static', filename='img/community/' ~ post.image) }}', '{{ post.title }}')" 
+                         style="cursor: pointer;">
+                {% else %}
+                    <div class="bg-white bg-opacity-25 p-4 rounded">
+                        <i class="fas fa-dumbbell fa-3x"></i>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Días de la rutina -->
+    {% if post.rutina_dias %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">
+                <i class="fas fa-calendar-week"></i> Días programados
+            </h5>
+            <div>
+                {% for dia in post.rutina_dias.split(',') %}
+                    <span class="days-badge">{{ dia.strip() }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Ejercicios/Items de la rutina -->
+    {% if items and items|length > 0 %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">
+                <i class="fas fa-list"></i> Ejercicios de la rutina
+            </h5>
+            <div class="row">
+                {% for item in items %}
+                <div class="col-md-6 mb-3">
+                        <div class="card item-card priority-{{ item.prioridad if post.rutina_tipo == 'estudio' else '' }}">
+                        <div class="card-body">
+                            <h6 class="card-title d-flex justify-content-between">
+                                {{ item.nombre_item }}
+                                {% if post.rutina_tipo == 'estudio' and item.prioridad %}
+                                <span class="badge bg-{{ 'danger' if item.prioridad == 'alta' else ('warning' if item.prioridad == 'media' else 'success') }}">
+                                    {{ item.prioridad|title }}
+                                </span>
+                                {% endif %}
+                            </h6>
+                            <div class="small text-muted">
+                                {% if item.series and item.repeticiones %}
+                                    <i class="fas fa-redo"></i> {{ item.series }} series × {{ item.repeticiones }} reps
+                                {% endif %}
+                                {% if item.tiempo %}
+                                    <br><i class="fas fa-clock"></i> {{ item.tiempo }} minutos
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card mb-4">
+        <div class="card-body text-center text-muted">
+            <i class="fas fa-info-circle"></i>
+            <p class="mb-0">Esta rutina no tiene ejercicios específicos definidos.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Acciones -->
+    {% if session.get('user_email') %}
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">
+                <i class="fas fa-save"></i> Guardar esta rutina
+            </h5>
+            <p class="text-muted mb-3">Selecciona los días en que quieres realizar esta rutina</p>
+            
+            <form action="{{ url_for('community_save', post_id=post.id) }}" method="post" class="d-flex gap-3 align-items-end flex-wrap" id="saveForm">
+                <div class="flex-grow-1">
+                    <label class="form-label">Días de la semana</label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="diasSeleccionados" value="Todos" id="diaTodos">
+                            <label class="form-check-label" for="diaTodos">Todos</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input dia-individual" type="checkbox" name="diasSeleccionados" value="Lunes" id="diaLunes">
+                            <label class="form-check-label" for="diaLunes">Lun</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input dia-individual" type="checkbox" name="diasSeleccionados" value="Martes" id="diaMartes">
+                            <label class="form-check-label" for="diaMartes">Mar</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input dia-individual" type="checkbox" name="diasSeleccionados" value="Miércoles" id="diaMiercoles">
+                            <label class="form-check-label" for="diaMiercoles">Mié</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input dia-individual" type="checkbox" name="diasSeleccionados" value="Jueves" id="diaJueves">
+                            <label class="form-check-label" for="diaJueves">Jue</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input dia-individual" type="checkbox" name="diasSeleccionados" value="Viernes" id="diaViernes">
+                            <label class="form-check-label" for="diaViernes">Vie</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input dia-individual" type="checkbox" name="diasSeleccionados" value="Sábado" id="diaSabado">
+                            <label class="form-check-label" for="diaSabado">Sáb</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input dia-individual" type="checkbox" name="diasSeleccionados" value="Domingo" id="diaDomingo">
+                            <label class="form-check-label" for="diaDomingo">Dom</label>
+                        </div>
+                    </div>
+                    <div id="validationMessage" class="text-danger small mt-1" style="display: none;"></div>
+                </div>
+                
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small">Horas</label>
+                        <div class="input-group">
+                            <input type="number" name="duracion_horas" min="0" max="12" class="form-control" 
+                                   value="{{ post.duracion_horas or 0 }}">
+                            <span class="input-group-text small">h</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small">Minutos</label>
+                        <div class="input-group">
+                            <input type="number" name="duracion_minutos" min="0" max="59" class="form-control" 
+                                   value="{{ post.duracion_minutos or 30 }}">
+                            <span class="input-group-text small">min</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="saveBtn">
+                    <i class="fas fa-plus"></i> Agregar a mis rutinas
+                </button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center">
+            <h5 class="card-title">¿Te gusta esta rutina?</h5>
+            <p class="text-muted">Inicia sesión para guardarla en tus rutinas personales</p>
+            <a href="{{ url_for('login') }}" class="btn btn-primary">Iniciar Sesión</a>
+        </div>
+    </div>
+    {% endif %}
+
+  <!-- Modal para ampliar imágenes -->
+  <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="imageModalLabel">Imagen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img id="modalImage" src="" alt="Imagen ampliada" class="img-fluid" style="max-height: 70vh;">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Función para abrir modal de imagen
+function openImageModal(imageSrc, title) {
+  const modal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+  const modalTitle = document.getElementById('imageModalLabel');
+  
+  modalImage.src = imageSrc;
+  modalTitle.textContent = title || 'Imagen';
+  
+  // Si Bootstrap 5 está disponible
+  if (typeof bootstrap !== 'undefined') {
+    const imageModal = new bootstrap.Modal(modal);
+    imageModal.show();
+  } else {
+    // Fallback para mostrar el modal sin Bootstrap
+    modal.style.display = 'block';
+    modal.classList.add('show');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Inicializando página de detalles de rutina...');
+    
+    const todosCheckbox = document.getElementById('diaTodos');
+    const individuales = document.querySelectorAll('.dia-individual');
+    
+    // Manejar "Todos"
+    if (todosCheckbox) {
+        todosCheckbox.addEventListener('change', function() {
+            console.log('Checkbox "Todos" cambiado:', this.checked);
+            individuales.forEach(cb => cb.checked = this.checked);
+        });
+    }
+    
+    // Manejar checkboxes individuales
+    individuales.forEach(cb => {
+        cb.addEventListener('change', function() {
+            console.log('Checkbox individual cambiado:', this.value, this.checked);
+            if (!this.checked) {
+                if (todosCheckbox) todosCheckbox.checked = false;
+            } else {
+                // Verificar si todos están marcados
+                const todosChecked = Array.from(individuales).every(c => c.checked);
+                if (todosCheckbox) todosCheckbox.checked = todosChecked;
+            }
+        });
+    });
+    
+    // Pre-seleccionar días basado en la rutina original si existen
+    {% if post.rutina_dias %}
+    console.log('Preseleccionando días de la rutina original...');
+    // Preseleccionar días de la rutina original
+    var diasArray = '{{ post.rutina_dias }}'.split(',');
+    diasArray.forEach(function(dia) {
+        var checkbox = document.querySelector('input[value="' + dia.trim() + '"]');
+        if (checkbox) {
+            checkbox.checked = true;
+            console.log('Día preseleccionado:', dia.trim());
+        }
+    });
+    
+    // Verificar si son todos los días
+    if (diasArray.length === 7 && todosCheckbox) {
+        todosCheckbox.checked = true;
+    }
+    {% endif %}
+
+    // Función para validar días seleccionados
+    function validateDays() {
+        const checkboxes = document.querySelectorAll('input[name="diasSeleccionados"]:checked');
+        console.log('Días seleccionados:', checkboxes.length);
+        return checkboxes.length > 0;
+    }
+
+    // Función para mostrar mensaje de validación
+    function showValidationMessage(message, isError = true) {
+        const msgDiv = document.getElementById('validationMessage');
+        if (msgDiv) {
+            msgDiv.textContent = message;
+            msgDiv.className = `small mt-1 ${isError ? 'text-danger' : 'text-success'}`;
+            msgDiv.style.display = 'block';
+            console.log('Mensaje de validación mostrado:', message);
+        }
+    }
+
+    // Función para ocultar mensaje de validación
+    function hideValidationMessage() {
+        const msgDiv = document.getElementById('validationMessage');
+        if (msgDiv) {
+            msgDiv.style.display = 'none';
+        }
+    }
+
+    // Manejar envío del formulario
+    const form = document.getElementById('saveForm');
+    if (form) {
+        console.log('Formulario encontrado, agregando event listener...');
+        form.addEventListener('submit', function(e) {
+            console.log('Formulario enviado, validando...');
+            
+            // Limpiar mensajes previos
+            hideValidationMessage();
+            
+            // Validar días
+            if (!validateDays()) {
+                console.log('Validación fallida: No hay días seleccionados');
+                e.preventDefault();
+                e.stopPropagation();
+                showValidationMessage('⚠️ Debes seleccionar al menos un día para guardar la rutina.');
+                return false;
+            }
+            
+            // Validar duración
+            const horasInput = document.querySelector('input[name="duracion_horas"]');
+            const minutosInput = document.querySelector('input[name="duracion_minutos"]');
+            const horas = parseInt(horasInput.value) || 0;
+            const minutos = parseInt(minutosInput.value) || 0;
+            const totalMinutos = (horas * 60) + minutos;
+            
+            if (totalMinutos < 1) {
+                console.log('Validación fallida: Duración inválida');
+                e.preventDefault();
+                e.stopPropagation();
+                showValidationMessage('⚠️ La duración debe ser al menos 1 minuto.');
+                return false;
+            }
+            
+            console.log('Validación exitosa, enviando formulario...');
+            
+            // Mostrar estado de carga
+            const submitBtn = document.getElementById('saveBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            }
+            
+            // Permitir que el formulario se envíe normalmente
+            return true;
+        });
+    } else {
+        console.log('ERROR: Formulario no encontrado');
+    }
+
+    // Ocultar mensaje de validación al cambiar días
+    document.querySelectorAll('input[name="diasSeleccionados"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (validateDays()) {
+                hideValidationMessage();
+            }
+        });
+    });
+
+    // Cerrar modal con escape o click fuera
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+        }
+    });
+    
+    // Cerrar modal con click en el backdrop
+    document.getElementById('imageModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+            this.classList.remove('show');
+        }
+    });
+    
+    console.log('Inicialización completada');
+});
+</script>
+{% endblock %}

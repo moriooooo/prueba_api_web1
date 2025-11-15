@@ -1,0 +1,20 @@
+{% extends 'admin/admin_layout.html' %}
+{% block title %}Perfil administrador{% endblock %}
+{% block content %}
+  <h2>Perfil administrador</h2>
+  <form method="post" enctype="multipart/form-data" class="card p-3">
+    <div class="mb-2">
+      <label class="form-label">Correo</label>
+      <input name="correo" value="{{ admin.email if admin else '' }}" class="form-control">
+    </div>
+    <div class="mb-2">
+      <label class="form-label">Nueva contraseña</label>
+      <input name="password" type="password" class="form-control">
+    </div>
+    <div class="mb-2">
+      <label class="form-label">Avatar</label>
+      <input name="avatar" type="file" accept="image/*" class="form-control">
+    </div>
+    <button class="btn btn-primary">Guardar</button>
+  </form>
+{% endblock %}

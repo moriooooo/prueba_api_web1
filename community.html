@@ -1,0 +1,576 @@
+{% extends 'base.html' %}
+
+{% block title %}Comunidad - FocusFit{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<style>
+.community-image {
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+.community-image:hover {
+    border-color: #667eea;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.section-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.btn-loading {
+    pointer-events: none;
+}
+
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header moderno -->
+    <div class="text-center mb-5">
+        <h2 class="section-header fs-3 fw-bold mb-2">
+            <i class="fas fa-users text-primary me-2"></i>Comunidad FocusFit
+        </h2>
+        <p class="text-muted fs-6">Comparte y descubre rutinas inspiradoras de otros usuarios</p>
+    </div>
+
+    {% if session.get('user_email') %}
+    <div class="row justify-content-center mb-5">
+        <div class="col-xl-10 col-lg-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white" style="padding: 1.5rem;">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-20 rounded-circle p-2 me-3">
+                            <i class="fas fa-share-alt text-white"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-semibold">Comparte tu rutina</h5>
+                            <small class="text-white-50">Inspira a otros usuarios con tu experiencia</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+        <form action="{{ url_for('community_post') }}" method="post" enctype="multipart/form-data">
+          <!-- Información básica -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h6 class="text-primary fw-semibold mb-3">
+                <i class="fas fa-info-circle me-2"></i>Información de la rutina
+              </h6>
+            </div>
+          </div>
+
+          <div class="row g-4">
+            <div class="col-md-6">
+              <div class="mb-4">
+                <label class="form-label fw-semibold">Título de la rutina</label>
+                <input name="title" class="form-control form-control-lg" 
+                       placeholder="Ej: Rutina matutina energizante" required>
+                <div class="form-text">Elige un nombre atractivo que describa tu rutina</div>
+              </div>
+              
+              <div class="mb-4">
+                <label class="form-label fw-semibold">Descripción motivacional</label>
+                <textarea name="summary" class="form-control" rows="4" 
+                         placeholder="Describe tu rutina: objetivos, beneficios, para quién es ideal, consejos..."></textarea>
+                <div class="form-text">Comparte tu experiencia e inspira a otros usuarios</div>
+              </div>
+              
+              <div class="mb-4">
+                <label class="form-label fw-semibold">Imagen motivacional</label>
+                <input type="file" name="image" id="communityImageInputForm" accept="image/*" class="form-control"
+                       onchange="
+                            console.log('Image input changed');
+                            const input = this;
+                            const imagePreview = document.getElementById('communityImagePreviewForm');
+                            const placeholder = document.getElementById('imagePreviewPlaceholder');
+                            
+                            if (!input.files || !input.files[0]) {
+                                console.log('No file selected');
+                                if (imagePreview) imagePreview.style.display = 'none';
+                                if (placeholder) {
+                                    placeholder.style.display = 'flex';
+                                    placeholder.style.visibility = 'visible';
+                                    placeholder.style.height = '200px';
+                                    placeholder.style.overflow = 'visible';
+                                    const placeholderText = placeholder.querySelector('p');
+                                    if (placeholderText) {
+                                        placeholderText.style.display = 'block';
+                                    }
+                                }
+                                return;
+                            }
+                            
+                            const file = input.files[0];
+                            console.log('File selected:', file.name, file.type, file.size);
+                            
+                            if (!file.type.startsWith('image/')) {
+                                alert('Por favor selecciona una imagen válida');
+                                input.value = '';
+                                return;
+                            }
+                            
+                            if (file.size > 5 * 1024 * 1024) {
+                                alert('La imagen es muy grande (máximo 5MB)');
+                                input.value = '';
+                                return;
+                            }
+                            
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                console.log('Image loaded successfully');
+                                if (imagePreview) {
+                                    imagePreview.src = e.target.result;
+                                    imagePreview.style.display = 'block';
+                                    console.log('Preview shown');
+                                }
+                                if (placeholder) {
+                                    placeholder.style.display = 'none';
+                                    placeholder.style.visibility = 'hidden';
+                                    placeholder.style.height = '0px';
+                                    placeholder.style.overflow = 'hidden';
+                                    console.log('Placeholder hidden');
+                                }
+                                
+                                // Asegurar que el texto del placeholder esté oculto
+                                const placeholderText = placeholder.querySelector('p');
+                                if (placeholderText) {
+                                    placeholderText.style.display = 'none';
+                                    console.log('Placeholder text hidden');
+                                }
+                            };
+                            
+                            reader.onerror = function(error) {
+                                console.error('Error reading file:', error);
+                                alert('Error al cargar la imagen');
+                            };
+                            
+                            reader.readAsDataURL(file);
+                       ">
+                <div class="form-text">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Formatos: JPG, PNG, GIF (máximo 5MB)
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <!-- Vista previa de imagen -->
+              <div class="mb-4">
+                <label class="form-label fw-semibold">Vista previa</label>
+                <div class="position-relative">
+                  <img id="communityImagePreviewForm" src="" 
+                       style="display:none; max-height:200px; width:100%; object-fit:cover; border-radius:12px; border: 2px solid #e9ecef;" />
+                  <div id="imagePreviewPlaceholder" class="d-flex align-items-center justify-content-center bg-light border rounded-3" 
+                       style="height:200px; border: 2px dashed #dee2e6;">
+                    <div class="text-center text-muted">
+                      <i class="fas fa-image fa-3x mb-3 text-primary opacity-50"></i>
+                      <p class="mb-0 fw-semibold">Vista previa de la imagen</p>
+                      <small>Selecciona una imagen arriba</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Configuración adicional -->
+              <div class="card border-0 bg-light">
+                <div class="card-body p-3">
+                  <h6 class="text-primary fw-semibold mb-3">
+                    <i class="fas fa-cog me-2"></i>Configuración de publicación
+                  </h6>
+                  <div class="form-check">
+                    <input type="checkbox" name="is_recommendation" value="1" class="form-check-input" id="isReco">
+                    <label class="form-check-label fw-semibold" for="isReco">
+                      <i class="fas fa-star text-warning me-1"></i> Marcar como recomendación pública
+                    </label>
+                    <div class="form-text mt-2">Aparecerá destacada en la sección de recomendaciones</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botones de acción -->
+          <div class="d-flex justify-content-end gap-2 pt-4 border-top mt-4">
+            <button type="reset" class="btn btn-outline-secondary btn-lg" onclick="
+                console.log('Reset button clicked');
+                const imagePreview = document.getElementById('communityImagePreviewForm');
+                const placeholder = document.getElementById('imagePreviewPlaceholder');
+                const fileInput = document.getElementById('communityImageInputForm');
+                
+                if (fileInput) fileInput.value = '';
+                if (imagePreview) {
+                  imagePreview.style.display = 'none';
+                  imagePreview.src = '';
+                }
+                if (placeholder) {
+                  placeholder.style.display = 'flex';
+                  placeholder.style.visibility = 'visible';
+                  placeholder.style.height = '200px';
+                  placeholder.style.overflow = 'visible';
+                  const placeholderText = placeholder.querySelector('p');
+                  if (placeholderText) {
+                    placeholderText.style.display = 'block';
+                  }
+                }
+                console.log('Form reset complete');
+            ">
+              <i class="fas fa-undo me-2"></i>Limpiar formulario
+            </button>
+            <button class="btn btn-primary btn-lg px-4" type="submit">
+              <i class="fas fa-share-alt me-2"></i>Publicar en comunidad
+            </button>
+          </div>
+        </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if posts and posts|length > 0 %}
+      <!-- Header de publicaciones -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <h5 class="text-primary fw-semibold mb-3">
+            <i class="fas fa-feed me-2"></i>Publicaciones de la comunidad
+          </h5>
+          <p class="text-muted mb-0">Descubre rutinas compartidas por otros usuarios</p>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        {% for p in posts %}
+          <div class="col-12">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body p-4">
+                <div class="row g-3">
+                  <div class="col-md-8">
+                    <!-- Título y metadatos -->
+                    <div class="mb-3">
+                      <h6 class="fw-bold text-dark mb-2">{{ p.titulo or p.title }}</h6>
+                      <div class="d-flex flex-wrap gap-3 small text-muted">
+                        <span>
+                          <i class="fas fa-clock me-1"></i>
+                          {{ p.actualizado_en or p.created_at }}
+                        </span>
+                        {% if p.user_name %}
+                          <span>
+                            <i class="fas fa-user me-1"></i>
+                            {{ p.user_name }}
+                          </span>
+                        {% endif %}
+                        {% if p.rutina_tipo %}
+                          <span class="badge bg-{% if p.rutina_tipo == 'ejercicio' %}success{% else %}primary{% endif %} bg-opacity-10 text-{% if p.rutina_tipo == 'ejercicio' %}success{% else %}primary{% endif %}">
+                            <i class="fas fa-{% if p.rutina_tipo == 'ejercicio' %}dumbbell{% else %}book{% endif %} me-1"></i>
+                            {{ p.rutina_tipo|title }}
+                          </span>
+                        {% endif %}
+                      </div>
+                    </div>
+
+                    <!-- Descripción -->
+                    <div class="mb-3">
+                      <p class="text-muted mb-0">{{ p.texto or p.summary or p.body }}</p>
+                    </div>
+                
+                    <!-- Días de la rutina -->
+                    {% if p.rutina_dias %}
+                      <div class="mb-3">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                          <small class="text-muted fw-semibold">
+                            <i class="fas fa-calendar-week me-1"></i>Días:
+                          </small>
+                          {% for dia in p.rutina_dias.split(',') %}
+                            <span class="badge bg-light text-dark border">{{ dia.strip() }}</span>
+                          {% endfor %}
+                        </div>
+                      </div>
+                    {% endif %}
+                
+                    <!-- Botones de acción -->
+                    <div class="d-flex flex-wrap gap-2">
+                      <!-- Ver detalles -->
+                      {% if p.get('user_id') and p.get('rutina_id') %}
+                        {% if p.secure_token %}
+                          <a href="{{ url_for('community_rutina_details', post_id=p.id, token=p.secure_token) }}" class="btn btn-outline-primary btn-sm">
+                        {% else %}
+                          <a href="{{ url_for('community_rutina_details', post_id=p.id) }}" class="btn btn-outline-primary btn-sm">
+                        {% endif %}
+                          <i class="fas fa-eye me-1"></i>Ver detalles
+                        </a>
+                      {% endif %}
+
+                      <!-- Botón eliminar para el autor -->
+                      {% if session.get('user_email') and session.get('usuario_id') == p.get('user_id') %}
+                        <form action="{{ url_for('community_delete', post_id=p.id) }}" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar publicación?');">
+                          <button class="btn btn-outline-danger btn-sm" type="submit">
+                            <i class="fas fa-trash me-1"></i>Eliminar
+                          </button>
+                        </form>
+                      {% endif %}
+                    </div>
+                  </div>
+                  
+                  <!-- Imagen -->
+                  {% if p.imagen or p.image %}
+                    {% set image_path = p.imagen or p.image %}
+                    <div class="col-md-4">
+                      <div class="text-center">
+                        {% if image_path.startswith('img/') %}
+                          <img src="{{ url_for('static', filename=image_path) }}" alt="Imagen de rutina" class="community-image w-100" 
+                               style="max-height: 140px; object-fit: cover; border-radius: 12px; cursor: pointer; border: 2px solid #e9ecef;" 
+                               onclick="
+                                 const imageSrc = '{{ url_for('static', filename=image_path) }}';
+                                 console.log('Opening image fullscreen:', imageSrc);
+                                 
+                                 const overlay = document.createElement('div');
+                                 overlay.id = 'image-fullscreen-overlay';
+                                 overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; cursor: pointer; opacity: 0; transition: opacity 0.3s ease;';
+                                 
+                                 const img = document.createElement('img');
+                                 img.src = imageSrc;
+                                 img.style.cssText = 'max-width: 95vw; max-height: 95vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); transform: scale(0.8); transition: transform 0.3s ease;';
+                                 
+                                 const closeBtn = document.createElement('div');
+                                 closeBtn.innerHTML = '×';
+                                 closeBtn.style.cssText = 'position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 10000; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: rgba(0, 0, 0, 0.5); transition: background-color 0.2s ease;';
+                                 
+                                 const closeFullscreen = () => {
+                                   overlay.style.opacity = '0';
+                                   img.style.transform = 'scale(0.8)';
+                                   setTimeout(() => {
+                                     if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                                     document.body.style.overflow = '';
+                                   }, 300);
+                                 };
+                                 
+                                 closeBtn.onclick = closeFullscreen;
+                                 overlay.onclick = (e) => { if (e.target === overlay) closeFullscreen(); };
+                                 
+                                 overlay.appendChild(img);
+                                 overlay.appendChild(closeBtn);
+                                 document.body.appendChild(overlay);
+                                 document.body.style.overflow = 'hidden';
+                                 
+                                 setTimeout(() => {
+                                   overlay.style.opacity = '1';
+                                   img.style.transform = 'scale(1)';
+                                 }, 10);
+                               " />
+                        {% else %}
+                          <img src="{{ url_for('static', filename='img/community/' ~ image_path) }}" alt="Imagen de rutina" class="community-image w-100"
+                               style="max-height: 140px; object-fit: cover; border-radius: 12px; cursor: pointer; border: 2px solid #e9ecef;"
+                               onclick="
+                                 const imageSrc = '{{ url_for('static', filename='img/community/' ~ image_path) }}';
+                                 console.log('Opening image fullscreen:', imageSrc);
+                                 
+                                 const overlay = document.createElement('div');
+                                 overlay.id = 'image-fullscreen-overlay';
+                                 overlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0, 0, 0, 0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; cursor: pointer; opacity: 0; transition: opacity 0.3s ease;';
+                                 
+                                 const img = document.createElement('img');
+                                 img.src = imageSrc;
+                                 img.style.cssText = 'max-width: 95vw; max-height: 95vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); transform: scale(0.8); transition: transform 0.3s ease;';
+                                 
+                                 const closeBtn = document.createElement('div');
+                                 closeBtn.innerHTML = '×';
+                                 closeBtn.style.cssText = 'position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 10000; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; border-radius: 50%; background-color: rgba(0, 0, 0, 0.5); transition: background-color 0.2s ease;';
+                                 
+                                 const closeFullscreen = () => {
+                                   overlay.style.opacity = '0';
+                                   img.style.transform = 'scale(0.8)';
+                                   setTimeout(() => {
+                                     if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                                     document.body.style.overflow = '';
+                                   }, 300);
+                                 };
+                                 
+                                 closeBtn.onclick = closeFullscreen;
+                                 overlay.onclick = (e) => { if (e.target === overlay) closeFullscreen(); };
+                                 
+                                 overlay.appendChild(img);
+                                 overlay.appendChild(closeBtn);
+                                 document.body.appendChild(overlay);
+                                 document.body.style.overflow = 'hidden';
+                                 
+                                 setTimeout(() => {
+                                   overlay.style.opacity = '1';
+                                   img.style.transform = 'scale(1)';
+                                 }, 10);
+                               " />
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endif %}
+                </div>
+
+                <!-- Formulario para guardar rutina (solo para otros usuarios) -->
+                {% set is_user_post = (p.get('user_id') is defined) and (p.get('approved') == 1) %}
+                {% if session.get('user_email') and is_user_post and session.get('usuario_id') != p.get('user_id') %}
+                  <div class="mt-3 pt-3 border-top">
+                    <div class="card border-0 bg-light">
+                      <div class="card-body p-3">
+                        <h6 class="text-primary fw-semibold mb-3">
+                          <i class="fas fa-download me-2"></i>Guardar en mis rutinas
+                        </h6>
+                        <form action="{{ url_for('community_save', post_id=p.id) }}" method="post" onsubmit="return validateFormDays({{ p.id }})">
+                          <div class="row g-3">
+                            <!-- Selección de días -->
+                            <div class="col-12">
+                              <label class="form-label fw-semibold small">Días de la semana</label>
+                              <div class="d-flex flex-wrap gap-2">
+                                <div class="form-check">
+                                  <input class="form-check-input dia-checkbox dia-checkbox-{{ p.id }}" type="checkbox" 
+                                         name="diasSeleccionados" value="Todos" id="diaTodos-{{ p.id }}" 
+                                         onchange="handleTodosChange({{ p.id }})">
+                                  <label class="form-check-label small" for="diaTodos-{{ p.id }}">Todos</label>
+                                </div>
+                                <div class="form-check">
+                                  <input class="form-check-input dia-checkbox dia-checkbox-{{ p.id }} dia-individual-{{ p.id }}" 
+                                         type="checkbox" name="diasSeleccionados" value="Lunes" id="diaLunes-{{ p.id }}" 
+                                         onchange="handleIndividualChange({{ p.id }})">
+                                  <label class="form-check-label small" for="diaLunes-{{ p.id }}">Lun</label>
+                                </div>
+                                <div class="form-check">
+                                  <input class="form-check-input dia-checkbox dia-checkbox-{{ p.id }} dia-individual-{{ p.id }}" 
+                                         type="checkbox" name="diasSeleccionados" value="Martes" id="diaMartes-{{ p.id }}" 
+                                         onchange="handleIndividualChange({{ p.id }})">
+                                  <label class="form-check-label small" for="diaMartes-{{ p.id }}">Mar</label>
+                                </div>
+                                <div class="form-check">
+                                  <input class="form-check-input dia-checkbox dia-checkbox-{{ p.id }} dia-individual-{{ p.id }}" 
+                                         type="checkbox" name="diasSeleccionados" value="Miércoles" id="diaMiercoles-{{ p.id }}" 
+                                         onchange="handleIndividualChange({{ p.id }})">
+                                  <label class="form-check-label small" for="diaMiercoles-{{ p.id }}">Mié</label>
+                                </div>
+                                <div class="form-check">
+                                  <input class="form-check-input dia-checkbox dia-checkbox-{{ p.id }} dia-individual-{{ p.id }}" 
+                                         type="checkbox" name="diasSeleccionados" value="Jueves" id="diaJueves-{{ p.id }}" 
+                                         onchange="handleIndividualChange({{ p.id }})">
+                                  <label class="form-check-label small" for="diaJueves-{{ p.id }}">Jue</label>
+                                </div>
+                                <div class="form-check">
+                                  <input class="form-check-input dia-checkbox dia-checkbox-{{ p.id }} dia-individual-{{ p.id }}" 
+                                         type="checkbox" name="diasSeleccionados" value="Viernes" id="diaViernes-{{ p.id }}" 
+                                         onchange="handleIndividualChange({{ p.id }})">
+                                  <label class="form-check-label small" for="diaViernes-{{ p.id }}">Vie</label>
+                                </div>
+                                <div class="form-check">
+                                  <input class="form-check-input dia-checkbox dia-checkbox-{{ p.id }} dia-individual-{{ p.id }}" 
+                                         type="checkbox" name="diasSeleccionados" value="Sábado" id="diaSabado-{{ p.id }}" 
+                                         onchange="handleIndividualChange({{ p.id }})">
+                                  <label class="form-check-label small" for="diaSabado-{{ p.id }}">Sáb</label>
+                                </div>
+                                <div class="form-check">
+                                  <input class="form-check-input dia-checkbox dia-checkbox-{{ p.id }} dia-individual-{{ p.id }}" 
+                                         type="checkbox" name="diasSeleccionados" value="Domingo" id="diaDomingo-{{ p.id }}" 
+                                         onchange="handleIndividualChange({{ p.id }})">
+                                  <label class="form-check-label small" for="diaDomingo-{{ p.id }}">Dom</label>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <!-- Duración -->
+                            <div class="col-md-6">
+                              <label class="form-label fw-semibold small">Duración</label>
+                              <div class="row g-1">
+                                <div class="col-6">
+                                  <div class="input-group input-group-sm">
+                                    <input type="number" name="duracion_horas" min="0" max="12" class="form-control" 
+                                           value="{{ p.duracion_horas or 0 }}" placeholder="0">
+                                    <span class="input-group-text">h</span>
+                                  </div>
+                                </div>
+                                <div class="col-6">
+                                  <div class="input-group input-group-sm">
+                                    <input type="number" name="duracion_minutos" min="0" max="59" class="form-control" 
+                                           value="{{ p.duracion_minutos or 30 }}" placeholder="30">
+                                    <span class="input-group-text">min</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <!-- Botón guardar -->
+                            <div class="col-md-6 d-flex align-items-end">
+                              <button type="submit" class="btn btn-primary btn-sm w-100">
+                                <span class="btn-text">
+                                  <i class="fas fa-save me-1"></i>Guardar rutina
+                                </span>
+                                <span class="btn-loading" style="display:none;">
+                                  <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                  Guardando...
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <!-- Mensajes de estado -->
+                          <div class="mt-2">
+                            <div class="text-danger small" id="error-{{ p.id }}" style="display:none;">
+                              <i class="fas fa-exclamation-triangle me-1"></i>Selecciona al menos un día
+                            </div>
+                            <div class="text-success small" id="success-{{ p.id }}" style="display:none;">
+                              <i class="fas fa-check-circle me-1"></i>¡Rutina guardada exitosamente!
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-5">
+        <div class="mb-4">
+          <i class="fas fa-users fa-4x text-muted opacity-50"></i>
+        </div>
+        <h5 class="text-muted mb-3">¡La comunidad está esperando tu primera rutina!</h5>
+        <p class="text-muted mb-4">
+          Sé el primero en compartir una rutina inspiradora y ayuda a otros usuarios a alcanzar sus objetivos.
+        </p>
+        {% if session.get('user_email') %}
+          <button class="btn btn-primary btn-lg" onclick="document.querySelector('form[action*=community_post]').scrollIntoView({behavior: 'smooth'});">
+            <i class="fas fa-plus me-2"></i>Compartir mi rutina
+          </button>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-sign-in-alt me-2"></i>Iniciar sesión para compartir
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Modal eliminado - ahora usamos fullscreen overlay -->
+{% endblock %}
+
+    {% block extra_js %}
+    <!-- JavaScript funcionalidad inline implementada directamente en los onclick -->
+    {% endblock %}

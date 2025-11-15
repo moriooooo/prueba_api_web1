@@ -1,0 +1,12 @@
+{% extends 'admin/admin_layout.html' %}
+{% block title %}Recuperar contraseña admin{% endblock %}
+{% block content %}
+  <h2>Recuperar contraseña administrador</h2>
+  <form method="post" class="card p-3">
+    <div class="mb-2">
+      <label class="form-label">Correo admin</label>
+      <input name="correo" type="email" required class="form-control">
+    </div>
+    <button class="btn btn-primary">Enviar enlace</button>
+  </form>
+{% endblock %}

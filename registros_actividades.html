@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+
+{% block title %}Registros de Actividades - FocusFit{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Header moderno -->
+  <div class="text-center mb-5">
+    <h2 class="text-primary fs-3 fw-bold mb-2">Registros de Actividades</h2>
+    <p class="text-muted fs-6">Historial completo de tu progreso semanal</p>
+  </div>
+
+  <!-- Navegación de semanas -->
+  <div class="row justify-content-center mb-5">
+    <div class="col-lg-10 col-xl-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <a href="{{ url_for('registros_actividades', semana_offset=semana_actual.offset + 1) }}" 
+               class="btn btn-outline-primary d-flex align-items-center gap-2 {{ 'disabled' if semana_actual.offset >= semana_actual.max_offset else '' }}">
+              <i class="fas fa-chevron-left"></i>
+              <span class="d-none d-sm-inline">Semana Anterior</span>
+            </a>
+            
+            <div class="text-center">
+              <div class="mb-2">
+                {% if semana_actual.es_actual %}
+                  <span class="badge bg-primary fs-6 px-3 py-2">
+                    <i class="fas fa-calendar-check me-1"></i>Semana Actual
+                  </span>
+                {% elif semana_actual.offset == semana_actual.max_offset %}
+                  <span class="badge bg-success fs-6 px-3 py-2">
+                    <i class="fas fa-star me-1"></i>Primera Semana con Rutinas
+                  </span>
+                {% else %}
+                  <span class="badge bg-secondary fs-6 px-3 py-2">
+                    <i class="fas fa-clock me-1"></i>Hace {{ semana_actual.offset }} semana{{ 's' if semana_actual.offset != 1 else '' }}
+                  </span>
+                {% endif %}
+              </div>
+              <div class="fw-semibold text-dark">{{ semana_actual.fecha_inicio }} - {{ semana_actual.fecha_fin }}</div>
+              {% if semana_actual.offset == semana_actual.max_offset and semana_actual.max_offset > 0 %}
+                <small class="text-info mt-1 d-block">
+                  <i class="fas fa-trophy me-1"></i>Esta es la primera semana donde creaste rutinas
+                </small>
+              {% endif %}
+            </div>
+            
+            <a href="{{ url_for('registros_actividades', semana_offset=semana_actual.offset - 1) }}" 
+               class="btn btn-outline-primary d-flex align-items-center gap-2 {{ 'disabled' if semana_actual.offset <= 0 else '' }}">
+              <span class="d-none d-sm-inline">Semana Siguiente</span>
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resumen semanal -->
+  <div class="row justify-content-center mb-5">
+    <div class="col-lg-8 col-xl-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header text-center text-white border-0 bg-primary" style="padding: 1.5rem;">
+          <div class="d-flex align-items-center justify-content-center">
+            <div class="bg-white bg-opacity-20 rounded-circle p-2 me-3">
+              <i class="fas fa-chart-line text-white"></i>
+            </div>
+            <div>
+              <h5 class="mb-0 fw-semibold">Progreso Semanal</h5>
+              <small class="text-white-50">Resumen de tu rendimiento</small>
+            </div>
+          </div>
+        </div>
+        <div class="card-body text-center p-4">
+          <!-- Porcentaje semanal grande -->
+          <div class="mb-4">
+            <h1 class="display-1 fw-bold mb-2 {{ 'text-success' if semana_actual.porcentaje_semanal >= 80 else 'text-warning' if semana_actual.porcentaje_semanal >= 50 else 'text-danger' }}">
+              {{ semana_actual.porcentaje_semanal }}<span class="fs-3">%</span>
+            </h1>
+          </div>
+          
+          <!-- Barra de progreso semanal -->
+          <div class="progress mb-4" style="height: 12px; border-radius: 6px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated {{ 'bg-success' if semana_actual.porcentaje_semanal >= 80 else 'bg-warning' if semana_actual.porcentaje_semanal >= 50 else 'bg-danger' }}" 
+                 role="progressbar" 
+                 style="width: {{ semana_actual.porcentaje_semanal }}%;" 
+                 aria-valuenow="{{ semana_actual.porcentaje_semanal }}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+            </div>
+          </div>
+          
+          <!-- Estadísticas semanales -->
+          <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+              <div class="text-center">
+                <h4 class="text-primary mb-1 fw-bold">{{ semana_actual.total_tareas }}</h4>
+                <small class="text-muted fw-medium">Total Tareas</small>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="text-center">
+                <h4 class="text-success mb-1 fw-bold">{{ semana_actual.tareas_completadas }}</h4>
+                <small class="text-muted fw-medium">Completadas</small>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="text-center">
+                <h4 class="text-warning mb-1 fw-bold">{{ semana_actual.total_tareas - semana_actual.tareas_completadas }}</h4>
+                <small class="text-muted fw-medium">Pendientes</small>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="text-center">
+                <h4 class="text-info mb-1 fw-bold">{{ semana_actual.dias_con_actividad }}</h4>
+                <small class="text-muted fw-medium">Días Activos</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Badge de rendimiento semanal -->
+          <div>
+            {% if semana_actual.porcentaje_semanal >= 90 %}
+              <span class="badge bg-success fs-6 px-3 py-2">
+                <i class="fas fa-trophy me-1"></i>Excelente Semana
+              </span>
+            {% elif semana_actual.porcentaje_semanal >= 70 %}
+              <span class="badge bg-info fs-6 px-3 py-2">
+                <i class="fas fa-star me-1"></i>Buena Semana
+              </span>
+            {% elif semana_actual.porcentaje_semanal >= 50 %}
+              <span class="badge bg-warning fs-6 px-3 py-2">
+                <i class="fas fa-bolt me-1"></i>Semana Regular
+              </span>
+            {% else %}
+              <span class="badge bg-danger fs-6 px-3 py-2">
+                <i class="fas fa-chart-line me-1"></i>Puede Mejorar
+              </span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progreso diario de la semana -->
+  {% if progreso_dias %}
+  <div class="row justify-content-center mb-5">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header text-center text-white border-0 bg-info" style="padding: 1.25rem;">
+          <h5 class="mb-1 fw-semibold">Progreso Diario de la Semana</h5>
+          <small class="opacity-75">Seguimiento día a día de tus actividades</small>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-4">
+            {% for dia in progreso_dias %}
+            <div class="col-xl-3 col-lg-4 col-md-6">
+              <div class="card h-100 border-0 shadow-sm {{ 'border-warning' if dia.es_hoy else '' }}" style="transition: transform 0.2s ease, box-shadow 0.2s ease;">
+                <div class="card-body text-center p-4">
+                  <!-- Día de la semana -->
+                  <div class="mb-3">
+                    <h6 class="fw-semibold {{ 'text-warning' if dia.es_hoy else 'text-dark' }}">
+                      {{ dia.nombre_dia }}
+                      {% if dia.es_hoy %}
+                        <div class="mt-1">
+                          <span class="badge bg-warning text-dark">HOY</span>
+                        </div>
+                      {% endif %}
+                    </h6>
+                    <small class="text-muted">{{ dia.fecha }}</small>
+                  </div>
+                  
+                  <!-- Porcentaje del día -->
+                  <div class="mb-3">
+                    <h2 class="fw-bold {{ 'text-success' if dia.porcentaje == 100 else 'text-warning' if dia.porcentaje >= 50 else 'text-danger' if dia.porcentaje > 0 else 'text-secondary' }}">
+                      {{ dia.porcentaje }}<span class="fs-6">%</span>
+                    </h2>
+                  </div>
+                  
+                  <!-- Barra de progreso -->
+                  <div class="mb-3">
+                    <div class="progress" style="height: 8px; border-radius: 4px;">
+                      <div class="progress-bar {{ 'bg-success' if dia.porcentaje == 100 else 'bg-warning' if dia.porcentaje >= 50 else 'bg-danger' if dia.porcentaje > 0 else 'bg-secondary' }}" 
+                           role="progressbar" 
+                           style="width: {{ dia.porcentaje }}%;">
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Estadísticas del día -->
+                  <div class="mb-3">
+                    <small class="text-muted fw-medium">
+                      {% if dia.es_futuro %}
+                        {% if dia.total_tareas == 0 %}
+                          Sin rutinas programadas
+                        {% else %}
+                          {{ dia.total_tareas }} actividades programadas
+                        {% endif %}
+                      {% else %}
+                        {{ dia.tareas_completadas }}/{{ dia.total_tareas }} tareas
+                      {% endif %}
+                    </small>
+                    {% if not dia.es_futuro and dia.total_tareas > 0 and dia.tareas_completadas < dia.total_tareas %}
+                      <small class="text-warning d-block mt-1">
+                        {% if dia.es_hoy %}
+                          <i class="fas fa-clock me-1"></i>{{ dia.total_tareas - dia.tareas_completadas }} pendientes
+                        {% else %}
+                          <i class="fas fa-times me-1"></i>{{ dia.total_tareas - dia.tareas_completadas }} no completadas
+                        {% endif %}
+                      </small>
+                    {% endif %}
+                  </div>
+                  
+                  <!-- Badge de estado diario -->
+                  <div>
+                    {% if dia.es_futuro %}
+                      {% if dia.total_tareas == 0 %}
+                        <span class="badge bg-light text-dark border">
+                          <i class="fas fa-calendar me-1"></i>Sin rutinas
+                        </span>
+                      {% else %}
+                        <span class="badge bg-info">
+                          <i class="fas fa-clipboard-list me-1"></i>Programado
+                        </span>
+                      {% endif %}
+                    {% elif dia.total_tareas == 0 %}
+                      <span class="badge bg-secondary">
+                        <i class="fas fa-minus-circle me-1"></i>Sin tareas
+                      </span>
+                    {% elif dia.porcentaje == 100 %}
+                      <span class="badge bg-success">
+                        <i class="fas fa-check-circle me-1"></i>Perfecto
+                      </span>
+                    {% elif dia.porcentaje >= 80 %}
+                      <span class="badge bg-info">
+                        <i class="fas fa-star me-1"></i>Muy bien
+                      </span>
+                    {% elif dia.porcentaje >= 50 %}
+                      <span class="badge bg-warning">
+                        <i class="fas fa-bolt me-1"></i>Regular
+                      </span>
+                    {% elif dia.porcentaje > 0 %}
+                      {% if dia.es_hoy %}
+                        <span class="badge bg-danger">
+                          <i class="fas fa-clock me-1"></i>Pendiente
+                        </span>
+                      {% else %}
+                        <span class="badge bg-danger">
+                          <i class="fas fa-chart-line me-1"></i>Incompleto
+                        </span>
+                      {% endif %}
+                    {% else %}
+                      {% if dia.es_hoy %}
+                        <span class="badge bg-secondary">
+                          <i class="fas fa-clock me-1"></i>Sin hacer
+                        </span>
+                      {% else %}
+                        <span class="badge bg-secondary">
+                          <i class="fas fa-times-circle me-1"></i>No realizado
+                        </span>
+                      {% endif %}
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico de Tareas Completadas -->
+  {% if grafica_datos %}
+  <div class="row justify-content-center mb-5">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header text-center text-white border-0 bg-success" style="padding: 1.25rem;">
+          <h5 class="mb-1 fw-semibold">Gráfico de Tareas Completadas</h5>
+          <small class="opacity-75">Tareas completadas en cada día de la semana</small>
+        </div>
+        <div class="card-body p-4">
+          <div class="chart-container bg-light rounded p-4" style="position: relative; height: 320px;">
+            <!-- Título del gráfico -->
+            <div class="text-center mb-3">
+              {% if not semana_actual.es_actual %}
+                <h6 class="text-muted fw-medium">{{ semana_actual.fecha_inicio }} - {{ semana_actual.fecha_fin }}</h6>
+              {% endif %}
+            </div>
+            
+            <!-- Eje Y (números) -->
+            <div class="position-absolute" style="left: 15px; top: 50px; bottom: 80px; width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: end;">
+              {% for i in range(altura_maxima + 1) %}
+                <span class="text-muted" style="font-size: 0.75rem;">{{ i }}</span>
+              {% endfor %}
+            </div>
+            
+            <!-- Área del gráfico -->
+            <div class="position-relative" style="margin-left: 55px; margin-right: 20px; height: 240px; border-left: 2px solid #dee2e6; border-bottom: 2px solid #dee2e6; display: flex; align-items: end; justify-content: space-around; gap: 8px;">
+              <!-- Líneas de referencia horizontales -->
+              <div class="position-absolute w-100 h-100" style="top: 0; left: 0; pointer-events: none;">
+                {% for i in range(1, altura_maxima + 1) %}
+                  <div class="position-absolute w-100 border-bottom border-secondary opacity-25" 
+                       style="bottom: {{ (i / altura_maxima * 220) }}px;"></div>
+                {% endfor %}
+              </div>
+              
+              <!-- Columnas -->
+              {% for dato in grafica_datos %}
+                <div class="d-flex flex-column align-items-center" style="flex: 1; max-width: 80px;">
+                  <!-- Columna principal -->
+                  <div class="position-relative rounded-top shadow-sm"
+                       data-bs-toggle="tooltip" 
+                       data-bs-placement="top" 
+                       title="{{ dato.completadas }} tareas completadas - {{ dato.fecha }}"
+                       style="width: 70%; 
+                              height: {{ (dato.completadas / altura_maxima * 220) if altura_maxima > 0 else 0 }}px; 
+                              background: {% if dato.es_hoy %}linear-gradient(135deg, #ffc107, #f39c12){% elif dato.completadas == 0 %}linear-gradient(135deg, #dc3545, #a71e2a){% else %}linear-gradient(135deg, #28a745, #1e7e34){% endif %};
+                              border-radius: 6px 6px 0 0;
+                              transition: all 0.3s ease;
+                              cursor: pointer;
+                              box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    
+                    <!-- Número de tareas -->
+                    {% if dato.completadas > 0 %}
+                      <span class="position-absolute text-white fw-bold d-flex align-items-center justify-content-center"
+                            style="top: -30px; left: 50%; transform: translateX(-50%); 
+                                   background: rgba(0,0,0,0.7); 
+                                   border-radius: 12px; 
+                                   width: 24px; height: 20px; 
+                                   font-size: 0.75rem;">
+                        {{ dato.completadas }}
+                      </span>
+                    {% endif %}
+                    
+                    <!-- Efecto hover -->
+                    <div class="position-absolute top-0 start-0 w-100 h-100 rounded-top opacity-0" 
+                         style="background: rgba(255,255,255,0.2); transition: opacity 0.3s ease;">
+                    </div>
+                  </div>
+                  
+                  <!-- Etiqueta del día -->
+                  <div class="text-center mt-3">
+                    <div class="fw-semibold {{ 'text-warning' if dato.es_hoy else 'text-dark' }}" style="font-size: 0.85rem;">
+                      {{ dato.dia }}
+                    </div>
+                    {% if dato.es_hoy %}
+                      <span class="badge bg-warning text-dark mt-1" style="font-size: 0.65rem;">HOY</span>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+          
+          <!-- Leyenda -->
+          <div class="mt-4">
+            <div class="d-flex justify-content-center align-items-center gap-4 flex-wrap">
+              {% if semana_actual.es_actual %}
+                <div class="d-flex align-items-center gap-2">
+                  <div class="rounded" style="width: 16px; height: 16px; background: linear-gradient(135deg, #ffc107, #f39c12);"></div>
+                  <span class="text-muted small">
+                    <i class="fas fa-calendar-check me-1"></i>Hoy
+                  </span>
+                </div>
+              {% endif %}
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded" style="width: 16px; height: 16px; background: linear-gradient(135deg, #28a745, #1e7e34);"></div>
+                <span class="text-muted small">
+                  <i class="fas fa-check-circle me-1"></i>Completadas
+                </span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <div class="rounded" style="width: 16px; height: 16px; background: linear-gradient(135deg, #dc3545, #a71e2a);"></div>
+                <span class="text-muted small">
+                  <i class="fas fa-times-circle me-1"></i>Sin completar
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="row justify-content-center mb-5">
+    <div class="col-lg-8 col-md-10">
+      <div class="card border-0 shadow-sm text-center">
+        <div class="card-body p-5">
+          <div class="mb-4">
+            <i class="fas fa-chart-line text-muted" style="font-size: 4rem;"></i>
+          </div>
+          <h5 class="text-muted mb-3">No hay registros de actividades para esta semana</h5>
+          <p class="text-muted mb-4">
+            Esta semana no tienes actividades registradas. ¡Comienza creando una rutina!
+          </p>
+          <a href="{{ url_for('crear_rutina') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Crear rutina
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Estadísticas adicionales -->
+  {% if semana_actual.total_tareas > 0 %}
+  <div class="row justify-content-center mb-5">
+    <div class="col-lg-10 col-xl-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header text-center text-white border-0 bg-warning" style="padding: 1.25rem;">
+          <h6 class="mb-0 fw-semibold text-dark">Estadísticas Detalladas</h6>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-4 text-center">
+            <div class="col-lg-3 col-md-6">
+              <div class="p-3 rounded" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb);">
+                <div class="mb-2">
+                  <i class="fas fa-trophy text-primary" style="font-size: 1.5rem;"></i>
+                </div>
+                <h5 class="text-primary fw-bold">{{ semana_actual.mejor_dia.porcentaje }}%</h5>
+                <small class="text-muted fw-medium">Mejor día<br>({{ semana_actual.mejor_dia.nombre }})</small>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <div class="p-3 rounded" style="background: linear-gradient(135deg, #fff3e0, #ffe0b2);">
+                <div class="mb-2">
+                  <i class="fas fa-star text-warning" style="font-size: 1.5rem;"></i>
+                </div>
+                <h5 class="text-warning fw-bold">{{ semana_actual.dias_perfectos }}</h5>
+                <small class="text-muted fw-medium">Días al 100%</small>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <div class="p-3 rounded" style="background: linear-gradient(135deg, #e1f5fe, #b3e5fc);">
+                <div class="mb-2">
+                  <i class="fas fa-fire text-info" style="font-size: 1.5rem;"></i>
+                </div>
+                <h5 class="text-info fw-bold">{{ semana_actual.racha_dias }}</h5>
+                <small class="text-muted fw-medium">Días consecutivos</small>
+              </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+              <div class="p-3 rounded" style="background: linear-gradient(135deg, #e8f5e8, #c8e6c9);">
+                <div class="mb-2">
+                  <i class="fas fa-chart-line text-success" style="font-size: 1.5rem;"></i>
+                </div>
+                <h5 class="text-success fw-bold">{{ semana_actual.promedio_diario }}%</h5>
+                <small class="text-muted fw-medium">Promedio diario</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Botones de navegación -->
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <h6 class="text-center text-muted mb-4">¿Qué quieres hacer a continuación?</h6>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <a href="{{ url_for('progreso') }}" class="btn btn-primary w-100 py-3 d-flex align-items-center justify-content-center gap-2">
+                <i class="fas fa-arrow-left"></i>
+                <span>Volver a Progreso</span>
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="{{ url_for('lista_diaria') }}" class="btn btn-outline-success w-100 py-3 d-flex align-items-center justify-content-center gap-2">
+                <i class="fas fa-tasks"></i>
+                <span>Lista Diaria</span>
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="{{ url_for('planificador') }}" class="btn btn-outline-secondary w-100 py-3 d-flex align-items-center justify-content-center gap-2">
+                <i class="fas fa-calendar"></i>
+                <span>Planificador</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

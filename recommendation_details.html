@@ -1,0 +1,626 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ recommendation.title }} - Recomendación{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+<style>
+.section-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.recommendation-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+}
+
+.recommendation-image {
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.difficulty-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    color: #333 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.content-section {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.save-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+/* Estilos para checkboxes personalizados */
+.day-checkbox {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.25) !important;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 12px !important;
+    padding: 12px 8px !important;
+    min-height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.day-checkbox::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.day-checkbox:hover::before {
+    opacity: 1;
+}
+
+.day-checkbox:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.day-checkbox.selected {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-color: white;
+    color: #667eea !important;
+    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+.day-checkbox.selected::before {
+    background: rgba(102, 126, 234, 0.1);
+    opacity: 1;
+}
+
+.day-checkbox.selected:hover {
+    background: white !important;
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(255, 255, 255, 0.5);
+}
+
+.day-checkbox label {
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: white;
+    cursor: pointer;
+    position: relative;
+    z-index: 2;
+}
+
+.day-checkbox.selected label {
+    color: #667eea !important;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Efectos adicionales para mejor feedback visual */
+.day-checkbox:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+.day-checkbox.selected:active {
+    transform: translateY(-1px) scale(0.98);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Botón volver -->
+    <div class="mb-4">
+        <a href="{{ url_for('recommendations_list') }}" class="btn btn-outline-secondary btn-lg">
+            <i class="fas fa-arrow-left me-2"></i>Volver a Recomendaciones
+        </a>
+    </div>
+
+    <!-- Cabecera de la recomendación -->
+    <div class="recommendation-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-3 fw-bold">{{ recommendation.title }}</h1>
+                <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+                    {% if recommendation.tipo %}
+                        <span class="badge bg-white text-dark fs-6 px-3 py-2 fw-bold shadow-sm">
+                            <i class="fas fa-{{ 'dumbbell' if recommendation.tipo == 'ejercicio' else 'book' }} me-1"></i>
+                            {{ recommendation.tipo|title }}
+                        </span>
+                    {% else %}
+                        <span class="badge bg-white text-dark fs-6 px-3 py-2 fw-bold shadow-sm">
+                            <i class="fas fa-dumbbell me-1"></i>
+                            Ejercicio
+                        </span>
+                    {% endif %}
+                    {% if recommendation.duration_minutes %}
+                        {% set total_minutes = recommendation.duration_minutes %}
+                        {% set horas = (total_minutes // 60) %}
+                        {% set minutos = (total_minutes % 60) %}
+                        <span class="badge bg-white text-dark fs-6 px-3 py-2 fw-bold shadow-sm">
+                            <i class="fas fa-clock me-1"></i>
+                            {% if horas > 0 %}{{ horas }}h {% endif %}
+                            {% if minutos > 0 or horas == 0 %}{{ minutos }}min{% endif %}
+                        </span>
+                    {% else %}
+                        <span class="badge bg-white text-dark fs-6 px-3 py-2 fw-bold shadow-sm">
+                            <i class="fas fa-clock me-1"></i>30min
+                        </span>
+                    {% endif %}
+                    {% if recommendation.difficulty %}
+                        <span class="difficulty-badge">
+                            {% if recommendation.difficulty == 'facil' %}
+                                <i class="fas fa-circle text-success me-1"></i>Fácil
+                            {% elif recommendation.difficulty == 'medio' %}
+                                <i class="fas fa-circle text-warning me-1"></i>Medio
+                            {% else %}
+                                <i class="fas fa-circle text-danger me-1"></i>Difícil
+                            {% endif %}
+                        </span>
+                    {% else %}
+                        <span class="difficulty-badge">
+                            <i class="fas fa-circle text-warning me-1"></i>Medio
+                        </span>
+                    {% endif %}
+                </div>
+                {% if recommendation.summary %}
+                <p class="mb-0 lead opacity-90">{{ recommendation.summary }}</p>
+                {% endif %}
+            </div>
+            <div class="col-md-4 text-center">
+                {% if recommendation.image %}
+                    <img src="{{ url_for('static', filename=('img/community/' ~ recommendation.image if not recommendation.image.startswith('img/') else recommendation.image)) }}" 
+                         alt="Imagen de recomendación" class="recommendation-image img-fluid"
+                         onclick="openImageModal('{{ url_for('static', filename=('img/community/' ~ recommendation.image if not recommendation.image.startswith('img/') else recommendation.image)) }}', '{{ recommendation.title }}')" 
+                         style="cursor: pointer;">
+                {% else %}
+                    <div class="bg-white bg-opacity-25 p-4 rounded">
+                        <i class="fas fa-star fa-3x"></i>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Descripción detallada -->
+    {% if recommendation.body %}
+    <div class="content-section">
+        <h5 class="mb-3">
+            <i class="fas fa-info-circle"></i> Descripción detallada
+        </h5>
+        <div class="text-justify">
+            {{ recommendation.body|replace('\n', '<br>')|safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Información adicional -->
+    <div class="content-section">
+        <h5 class="mb-3">
+            <i class="fas fa-chart-line"></i> Información de la rutina
+        </h5>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-clock text-primary me-2"></i>
+                    <strong>Duración:</strong> 
+                    {% if recommendation.duration_minutes %}
+                        {% set total_minutes = recommendation.duration_minutes %}
+                        {% set horas = (total_minutes // 60) %}
+                        {% set minutos = (total_minutes % 60) %}
+                        <span class="ms-2 badge bg-info text-white px-2 py-1">
+                            <i class="fas fa-clock me-1"></i>
+                            {% if horas > 0 %}{{ horas }}h {% endif %}
+                            {% if minutos > 0 or horas == 0 %}{{ minutos }}min{% endif %}
+                        </span>
+                    {% else %}
+                        <span class="ms-2 badge bg-info text-white px-2 py-1">
+                            <i class="fas fa-clock me-1"></i>30min
+                        </span>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-tag text-primary me-2"></i>
+                    <strong>Tipo:</strong> 
+                    {% if recommendation.tipo %}
+                        <span class="ms-2 badge bg-primary text-white px-2 py-1">
+                            <i class="fas fa-{{ 'book' if recommendation.tipo == 'estudio' else 'dumbbell' }} me-1"></i>
+                            {{ recommendation.tipo|title }}
+                        </span>
+                    {% else %}
+                        <span class="ms-2 badge bg-primary text-white px-2 py-1">
+                            <i class="fas fa-dumbbell me-1"></i>
+                            Ejercicio
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-signal text-primary me-2"></i>
+                    <strong>Dificultad:</strong> 
+                    {% if recommendation.difficulty %}
+                        {% if recommendation.difficulty == 'facil' %}
+                            <span class="ms-2 badge bg-success text-white px-2 py-1">
+                                <i class="fas fa-circle me-1"></i>Fácil
+                            </span>
+                        {% elif recommendation.difficulty == 'medio' %}
+                            <span class="ms-2 badge bg-warning text-white px-2 py-1">
+                                <i class="fas fa-circle me-1"></i>Medio
+                            </span>
+                        {% else %}
+                            <span class="ms-2 badge bg-danger text-white px-2 py-1">
+                                <i class="fas fa-circle me-1"></i>Difícil
+                            </span>
+                        {% endif %}
+                    {% else %}
+                        <span class="ms-2 badge bg-warning text-white px-2 py-1">
+                            <i class="fas fa-circle me-1"></i>Medio
+                        </span>
+                    {% endif %}
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-calendar text-primary me-2"></i>
+                    <strong>Publicado:</strong> 
+                    <span class="ms-2">{{ recommendation.created_at.strftime('%d/%m/%Y') if recommendation.created_at else 'N/A' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guardar recomendación -->
+    {% if session.get('user_email') %}
+    <div class="save-section">
+        <div class="row align-items-center">
+            <div class="col-lg-8 mb-3 mb-lg-0">
+                <h5 class="mb-2 d-flex align-items-center">
+                    <i class="fas fa-save me-2"></i> Guardar esta recomendación
+                </h5>
+                <p class="mb-0 opacity-90">Selecciona los días en que quieres realizar esta rutina</p>
+            </div>
+            <div class="col-lg-4 text-lg-end">
+                <i class="fas fa-calendar-plus fa-2x opacity-50"></i>
+            </div>
+        </div>
+        
+        <hr class="my-4 border-white border-opacity-25">
+        
+        <form action="{{ url_for('save_recommendation', rid=recommendation.id) }}" method="post" id="saveRecommendationForm">
+            <!-- Token de seguridad -->
+            {% if secure_token %}
+                <input type="hidden" name="secure_token" value="{{ secure_token }}">
+            {% endif %}
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold text-white mb-3">
+                    <i class="fas fa-calendar-week me-2"></i>Días de la semana
+                </label>
+                <div class="row g-3">
+                    <div class="col-6 col-sm-4 col-md-3">
+                        <div class="day-checkbox" data-day="todos">
+                            <input class="form-check-input d-none" type="checkbox" name="diasSeleccionados" value="Todos" id="diaTodos">
+                            <label class="form-check-label w-100 cursor-pointer text-center" for="diaTodos">
+                                <i class="fas fa-calendar me-1"></i>Todos
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3">
+                        <div class="day-checkbox" data-day="lunes">
+                            <input class="form-check-input d-none dia-individual" type="checkbox" name="diasSeleccionados" value="Lunes" id="diaLunes">
+                            <label class="form-check-label w-100 cursor-pointer text-center" for="diaLunes">Lun</label>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3">
+                        <div class="day-checkbox" data-day="martes">
+                            <input class="form-check-input d-none dia-individual" type="checkbox" name="diasSeleccionados" value="Martes" id="diaMartes">
+                            <label class="form-check-label w-100 cursor-pointer text-center" for="diaMartes">Mar</label>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3">
+                        <div class="day-checkbox" data-day="miercoles">
+                            <input class="form-check-input d-none dia-individual" type="checkbox" name="diasSeleccionados" value="Miércoles" id="diaMiercoles">
+                            <label class="form-check-label w-100 cursor-pointer text-center" for="diaMiercoles">Mié</label>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3">
+                        <div class="day-checkbox" data-day="jueves">
+                            <input class="form-check-input d-none dia-individual" type="checkbox" name="diasSeleccionados" value="Jueves" id="diaJueves">
+                            <label class="form-check-label w-100 cursor-pointer text-center" for="diaJueves">Jue</label>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3">
+                        <div class="day-checkbox" data-day="viernes">
+                            <input class="form-check-input d-none dia-individual" type="checkbox" name="diasSeleccionados" value="Viernes" id="diaViernes">
+                            <label class="form-check-label w-100 cursor-pointer text-center" for="diaViernes">Vie</label>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3">
+                        <div class="day-checkbox" data-day="sabado">
+                            <input class="form-check-input d-none dia-individual" type="checkbox" name="diasSeleccionados" value="Sábado" id="diaSabado">
+                            <label class="form-check-label w-100 cursor-pointer text-center" for="diaSabado">Sáb</label>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-4 col-md-3">
+                        <div class="day-checkbox" data-day="domingo">
+                            <input class="form-check-input d-none dia-individual" type="checkbox" name="diasSeleccionados" value="Domingo" id="diaDomingo">
+                            <label class="form-check-label w-100 cursor-pointer text-center" for="diaDomingo">Dom</label>
+                        </div>
+                    </div>
+                </div>
+                <div id="validationMessage" class="text-warning small mt-2" style="display: none;"></div>
+            </div>
+            
+            <div class="text-center">
+                <button type="submit" class="btn btn-light btn-lg px-4 py-3 fw-bold" id="saveBtn">
+                    <i class="fas fa-plus me-2"></i>Agregar a mis rutinas
+                </button>
+            </div>
+        </form>
+    </div>
+    {% else %}
+    <div class="content-section text-center py-5">
+        <div class="mb-4">
+            <i class="fas fa-heart fa-3x text-primary mb-3"></i>
+            <h5 class="fw-bold">¿Te gusta esta recomendación?</h5>
+            <p class="text-muted mb-4">Inicia sesión para guardarla en tus rutinas personales y hacer seguimiento de tu progreso</p>
+        </div>
+        <div class="d-flex gap-3 justify-content-center flex-wrap">
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg px-4">
+                <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+            </a>
+            <a href="{{ url_for('register') }}" class="btn btn-outline-primary btn-lg px-4">
+                <i class="fas fa-user-plus me-2"></i>Registrarse
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Modal para ampliar imágenes -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalLabel">Imagen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" src="" alt="Imagen ampliada" class="img-fluid" style="max-height: 70vh;">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Función para abrir modal de imagen
+function openImageModal(imageSrc, title) {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalTitle = document.getElementById('imageModalLabel');
+    
+    modalImage.src = imageSrc;
+    modalTitle.textContent = title || 'Imagen';
+    
+    // Si Bootstrap 5 está disponible
+    if (typeof bootstrap !== 'undefined') {
+        const imageModal = new bootstrap.Modal(modal);
+        imageModal.show();
+    } else {
+        // Fallback para mostrar el modal sin Bootstrap
+        modal.style.display = 'block';
+        modal.classList.add('show');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Inicializando página de detalles de recomendación...');
+    
+    const todosCheckbox = document.getElementById('diaTodos');
+    const individuales = document.querySelectorAll('.dia-individual');
+    const dayCheckboxes = document.querySelectorAll('.day-checkbox');
+    
+    // Función para actualizar estilos visuales
+    function updateCheckboxStyles() {
+        dayCheckboxes.forEach(container => {
+            const checkbox = container.querySelector('input[type="checkbox"]');
+            if (checkbox && checkbox.checked) {
+                container.classList.add('selected');
+            } else {
+                container.classList.remove('selected');
+            }
+        });
+    }
+    
+    // Manejar clicks en contenedores de días
+    dayCheckboxes.forEach(container => {
+        container.addEventListener('click', function(e) {
+            // Solo procesar si no se clickeó directamente en el checkbox
+            if (e.target.type !== 'checkbox') {
+                const checkbox = this.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+    });
+    
+    // Manejar "Todos"
+    if (todosCheckbox) {
+        todosCheckbox.addEventListener('change', function() {
+            console.log('Checkbox "Todos" cambiado:', this.checked);
+            individuales.forEach(cb => {
+                cb.checked = this.checked;
+            });
+            updateCheckboxStyles();
+        });
+    }
+    
+    // Manejar checkboxes individuales
+    individuales.forEach(cb => {
+        cb.addEventListener('change', function() {
+            console.log('Checkbox individual cambiado:', this.value, this.checked);
+            if (!this.checked) {
+                if (todosCheckbox) todosCheckbox.checked = false;
+            } else {
+                // Verificar si todos están marcados
+                const todosChecked = Array.from(individuales).every(c => c.checked);
+                if (todosCheckbox) todosCheckbox.checked = todosChecked;
+            }
+            updateCheckboxStyles();
+        });
+    });
+
+    // Inicializar estilos al cargar la página
+    updateCheckboxStyles();
+
+    // Función para validar días seleccionados
+    function validateDays() {
+        const checkboxes = document.querySelectorAll('input[name="diasSeleccionados"]:checked');
+        console.log('Días seleccionados:', checkboxes.length);
+        return checkboxes.length > 0;
+    }
+
+    // Función para mostrar mensaje de validación
+    function showValidationMessage(message, isError = true) {
+        const msgDiv = document.getElementById('validationMessage');
+        if (msgDiv) {
+            msgDiv.textContent = message;
+            msgDiv.className = `small mt-1 ${isError ? 'text-warning' : 'text-success'}`;
+            msgDiv.style.display = 'block';
+            console.log('Mensaje de validación mostrado:', message);
+        }
+    }
+
+    // Función para ocultar mensaje de validación
+    function hideValidationMessage() {
+        const msgDiv = document.getElementById('validationMessage');
+        if (msgDiv) {
+            msgDiv.style.display = 'none';
+        }
+    }
+
+    // Manejar envío del formulario
+    const form = document.getElementById('saveRecommendationForm');
+    if (form) {
+        console.log('Formulario encontrado, agregando event listener...');
+        form.addEventListener('submit', function(e) {
+            console.log('Formulario enviado, validando...');
+            
+            // Limpiar mensajes previos
+            hideValidationMessage();
+            
+            // Validar días
+            if (!validateDays()) {
+                console.log('Validación fallida: No hay días seleccionados');
+                e.preventDefault();
+                e.stopPropagation();
+                showValidationMessage('⚠️ Debes seleccionar al menos un día para guardar la recomendación.');
+                return false;
+            }
+            
+            console.log('Validación exitosa, enviando formulario...');
+            
+            // Mostrar estado de carga
+            const submitBtn = document.getElementById('saveBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            }
+            
+            // Permitir que el formulario se envíe normalmente
+            return true;
+        });
+    } else {
+        console.log('ERROR: Formulario no encontrado');
+    }
+
+    // Ocultar mensaje de validación al cambiar días
+    document.querySelectorAll('input[name="diasSeleccionados"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (validateDays()) {
+                hideValidationMessage();
+            }
+        });
+    });
+
+    // Cerrar modal con escape o click fuera
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('imageModal');
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+        }
+    });
+    
+    // Cerrar modal con click en el backdrop
+    document.getElementById('imageModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.style.display = 'none';
+            this.classList.remove('show');
+        }
+    });
+    
+    console.log('Inicialización completada');
+});
+</script>
+{% endblock %}

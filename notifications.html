@@ -1,0 +1,95 @@
+{% raw %}
+<!-- Partial: notifications (se incluye debajo de la navbar) -->
+<style>
+  /* Recuadro centrado debajo de la navbar */
+  #ff-notifications { position: fixed; top: 72px; left: 50%; transform: translateX(-50%); z-index: 2000; width: calc(100% - 40px); max-width: 640px; pointer-events: none; }
+  .ff-notif { background: #ffffff; border: 1px solid rgba(0,0,0,0.08); padding: 14px 18px; margin-bottom: 10px; border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.12); pointer-events: auto; display: flex; align-items: center; gap: 12px; animation: slideDown 300ms ease; }
+  .ff-notif .icon { width: 44px; height: 44px; border-radius: 8px; background: linear-gradient(90deg,#ff8a00,#ff3d00); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; }
+  .ff-notif .content { flex:1; }
+  .ff-notif h6 { margin: 0 0 6px 0; font-size: 15px; font-weight: 700; }
+  .ff-notif p { margin: 0; font-size: 14px; color: #333; }
+  .ff-notif .close-btn { background: transparent; border: none; font-size: 18px; color: #666; cursor: pointer; }
+
+  @keyframes slideDown {
+    from { transform: translateY(-6px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+</style>
+
+<div id="ff-notifications" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+  (function(){
+    const POLL = 4000; // 4s
+    const DISPLAY_MS = 5000; // 5s
+
+    async function fetchDue(){
+      try{
+        const res = await fetch('/api/notifications/due');
+        if(!res.ok) return;
+        const data = await res.json();
+        if(Array.isArray(data) && data.length){
+          // Mostrar de forma escalonada para evitar que todas aparezcan al mismo tiempo
+          const gap = Math.max(300, Math.floor(DISPLAY_MS / 3));
+          data.forEach((n, idx) => {
+            setTimeout(() => { showNotif(n); }, idx * (DISPLAY_MS + gap));
+          });
+        }
+      }catch(e){ console.warn('fetchDue error', e); }
+    }
+
+    function showNotif(n){
+      try{
+        // evitar duplicados usando sessionStorage
+        const shown = JSON.parse(sessionStorage.getItem('ff_shown') || '[]');
+        if(shown.includes(n.id)) return;
+        shown.push(n.id);
+        sessionStorage.setItem('ff_shown', JSON.stringify(shown));
+
+        const container = document.getElementById('ff-notifications');
+        const el = document.createElement('div');
+        el.className = 'ff-notif';
+
+        el.innerHTML = `
+          <div class="icon">🔥</div>
+          <div class="content">
+            <h6>${escapeHtml(n.title)}</h6>
+            <p>${escapeHtml(n.message)}</p>
+          </div>
+          <button class="close-btn" aria-label="Cerrar">✕</button>
+        `;
+
+        const closeBtn = el.querySelector('.close-btn');
+        closeBtn.addEventListener('click', () => {
+          try { markDelivered(n.id); } catch(e){}
+          el.remove();
+        });
+
+        container.appendChild(el);
+
+        // auto-hide
+        const timer = setTimeout(()=>{ try{ markDelivered(n.id); }catch(e){}; el.remove(); }, DISPLAY_MS);
+
+        // si el usuario cierra con teclado/escape
+        el.addEventListener('keydown', function(ev){ if(ev.key === 'Escape'){ clearTimeout(timer); try{ markDelivered(n.id); }catch(e){}; el.remove(); }});
+
+      }catch(e){ console.warn('showNotif error', e); }
+    }
+
+    function escapeHtml(str){
+      if(!str) return '';
+      return String(str).replace(/[&<>\"]/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[m]; });
+    }
+
+    function markDelivered(id){
+      fetch('/api/notifications/mark_delivered', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id: id})}).catch(()=>{});
+    }
+
+    // iniciar polling (siempre) — forzar para que las notificaciones in-app se muestren
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(fetchDue, 800);
+      setInterval(fetchDue, POLL);
+    });
+  })();
+</script>
+{% endraw %}

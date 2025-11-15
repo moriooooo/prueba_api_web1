@@ -1,0 +1,16 @@
+{% extends 'admin/admin_layout.html' %}
+{% block title %}Mensajes{% endblock %}
+{% block content %}
+  <h2>Mensajes</h2>
+  <div class="list-group">
+    {% for m in messages %}
+      <div class="list-group-item">
+        <div class="fw-bold">{{ m.titulo or m.title }}</div>
+        <div class="small text-muted">{{ m.actualizado_en }}</div>
+        <div>{{ m.texto or m.body }}</div>
+      </div>
+    {% else %}
+      <div class="list-group-item">No hay mensajes</div>
+    {% endfor %}
+  </div>
+{% endblock %}

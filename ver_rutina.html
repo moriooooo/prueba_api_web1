@@ -1,0 +1,171 @@
+<!-- templates/ver_rutina.html -->
+{% extends "base.html" %}
+
+{% block title %}Rutina: {{ rutina.nombre }} - FocusFit{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Header moderno -->
+  <div class="text-center mb-5">
+    <h2 class="text-primary fs-3 fw-bold mb-3">{{ rutina.nombre }}</h2>
+    <div class="d-flex justify-content-center">
+      <span class="badge fs-6 px-4 py-2 {{ 'bg-info' if rutina.tipo == 'estudio' else 'bg-success' }}">
+        <i class="fas {{ 'fa-book' if rutina.tipo == 'estudio' else 'fa-dumbbell' }} me-2"></i>
+        {{ 'Estudio' if rutina.tipo == 'estudio' else 'Ejercicio' }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Información de la rutina -->
+  <div class="row justify-content-center mb-5">
+    <div class="col-lg-8 col-xl-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header text-center text-white border-0 bg-primary" style="padding: 1.25rem;">
+          <h5 class="mb-1 fw-semibold">Detalles de la Rutina</h5>
+          <small class="opacity-75">Información general y configuración</small>
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-4">
+            <div class="col-12">
+              <div class="d-flex align-items-center p-3 rounded" style="background: linear-gradient(135deg, #e1f5fe, #b3e5fc);">
+                <div class="bg-info bg-opacity-20 rounded-circle p-3 me-3">
+                  <i class="fas fa-calendar text-info" style="font-size: 1.2rem;"></i>
+                </div>
+                <div>
+                  <h6 class="fw-semibold mb-1 text-dark">Días de la semana</h6>
+                  <span class="text-muted fw-medium">{{ rutina.dias.replace(',', ', ') }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-12">
+              <div class="d-flex align-items-center p-3 rounded" style="background: linear-gradient(135deg, #fff3e0, #ffe0b2);">
+                <div class="bg-warning bg-opacity-20 rounded-circle p-3 me-3">
+                  <i class="fas fa-clock text-warning" style="font-size: 1.2rem;"></i>
+                </div>
+                <div>
+                  <h6 class="fw-semibold mb-1 text-dark">Horario</h6>
+                  <span class="text-muted fw-medium">{{ rutina.horario or 'Sin horario específico' }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-12">
+              <div class="d-flex align-items-center p-3 rounded" style="background: linear-gradient(135deg, #e8f5e8, #c8e6c9);">
+                <div class="bg-success bg-opacity-20 rounded-circle p-3 me-3">
+                  <i class="fas fa-stopwatch text-success" style="font-size: 1.2rem;"></i>
+                </div>
+                <div>
+                  <h6 class="fw-semibold mb-1 text-dark">Duración estimada</h6>
+                  <span class="text-muted fw-medium">
+                    {% if rutina.duracion_horas or rutina.duracion_minutos %}
+                      {{ rutina.duracion_horas }}h {{ rutina.duracion_minutos }}m
+                    {% else %}
+                      No especificada
+                    {% endif %}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista de actividades -->
+  <div class="row justify-content-center mb-5">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header text-center text-white border-0 bg-success" style="padding: 1.25rem;">
+          <h5 class="mb-1 fw-semibold">Actividades ({{ items|length }})</h5>
+          <small class="opacity-75">Lista completa de tareas de esta rutina</small>
+        </div>
+        <div class="card-body p-4">
+          {% if items %}
+            <div class="row g-3">
+              {% for item in items %}
+                <div class="col-lg-6">
+                  <div class="card border-0 h-100 {{ 'bg-success bg-opacity-10 border-success' if item.completado else 'bg-light' }}" style="transition: transform 0.2s ease;">
+                    <div class="card-body p-3">
+                      <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h6 class="fw-bold text-dark mb-0">{{ item.nombre_item }}</h6>
+                        <span class="badge {{ 'bg-success' if item.completado else 'bg-secondary' }} ms-2">
+                          {% if item.completado %}
+                            <i class="fas fa-check me-1"></i>Completado
+                          {% else %}
+                            <i class="fas fa-clock me-1"></i>Pendiente
+                          {% endif %}
+                        </span>
+                      </div>
+                      
+                      <div class="mb-3">
+                        {% if item.series and item.repeticiones %}
+                          <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-redo text-primary me-2"></i>
+                            <small class="text-muted fw-medium">{{ item.series }} series × {{ item.repeticiones }} repeticiones</small>
+                          </div>
+                        {% elif item.tiempo %}
+                          <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-clock text-warning me-2"></i>
+                            <small class="text-muted fw-medium">{{ item.tiempo }} minutos</small>
+                          </div>
+                        {% endif %}
+                      </div>
+                      
+                      {% if item.prioridad %}
+                        <div class="mt-2">
+                          <span class="badge {{ 'bg-danger' if item.prioridad == 'alta' else 'bg-warning text-dark' if item.prioridad == 'media' else 'bg-secondary' }} px-3 py-1">
+                            <i class="fas fa-{{ 'exclamation-triangle' if item.prioridad == 'alta' else 'minus' if item.prioridad == 'media' else 'circle' }} me-1"></i>
+                            Prioridad {{ item.prioridad }}
+                          </span>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-4">
+              <div class="mb-3">
+                <i class="fas fa-list-ul text-muted" style="font-size: 3rem;"></i>
+              </div>
+              <h6 class="text-muted mb-3">Esta rutina no tiene actividades</h6>
+              <p class="text-muted mb-3">Agrega actividades para poder seguir tu progreso</p>
+              <a href="{{ url_for('editar_rutina_completa', id_rutina=rutina.id_rutina) }}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>Editar rutina
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botones de navegación -->
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <h6 class="text-center text-muted mb-4">¿Qué quieres hacer?</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <a href="{{ url_for('editar_rutina_completa', id_rutina=rutina.id_rutina) }}" class="btn btn-primary w-100 py-3 d-flex align-items-center justify-content-center gap-2">
+                <i class="fas fa-edit"></i>
+                <span>Editar rutina</span>
+              </a>
+            </div>
+            <div class="col-md-6">
+              <a href="{{ url_for('mis_rutinas') }}" class="btn btn-outline-secondary w-100 py-3 d-flex align-items-center justify-content-center gap-2">
+                <i class="fas fa-arrow-left"></i>
+                <span>Volver a mis rutinas</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

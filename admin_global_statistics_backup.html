@@ -1,0 +1,486 @@
+{% extends "admin/admin_layout.html" %}
+
+{% block title %}Estadísticas Globales - FocusFit Admin{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.stats-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 15px;
+  color: white;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.stats-icon {
+  font-size: 2.5rem;
+  opacity: 0.8;
+}
+
+.filter-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.chart-container {
+  background: white;
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+  margin-bottom: 25px;
+}
+
+.export-btn {
+  border-radius: 25px;
+  padding: 8px 20px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.table-responsive {
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.period-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.type-btn.active {
+  background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%);
+  color: white;
+  border: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h1 class="h3 mb-0">📊 Estadísticas Globales</h1>
+          <p class="text-muted">Análisis detallado del uso de la aplicación</p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('admin.global_statistics', export='csv', tipo=filtro_tipo, periodo=periodo) }}" 
+             class="btn btn-outline-success export-btn">
+            <i class="fas fa-file-csv me-1"></i>Exportar CSV
+          </a>
+          <a href="{{ url_for('admin.global_statistics', export='pdf', tipo=filtro_tipo, periodo=periodo) }}" 
+             class="btn btn-outline-danger export-btn">
+            <i class="fas fa-file-pdf me-1"></i>Exportar PDF
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card filter-card">
+        <div class="card-body">
+          <h5 class="card-title mb-3">🔍 Filtros de Análisis</h5>
+          
+          <!-- Filtros de Período -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Período de Análisis:</label>
+            <div class="btn-group" role="group">
+              <a href="{{ url_for('admin.global_statistics', tipo=filtro_tipo, periodo='semana') }}" 
+                 class="btn btn-outline-primary period-btn {{ 'active' if periodo == 'semana' else '' }}">
+                📅 Última Semana
+              </a>
+              <a href="{{ url_for('admin.global_statistics', tipo=filtro_tipo, periodo='mes') }}" 
+                 class="btn btn-outline-primary period-btn {{ 'active' if periodo == 'mes' else '' }}">
+                📅 Último Mes
+              </a>
+              <a href="{{ url_for('admin.global_statistics', tipo=filtro_tipo, periodo='año') }}" 
+                 class="btn btn-outline-primary period-btn {{ 'active' if periodo == 'año' else '' }}">
+                📅 Último Año
+              </a>
+            </div>
+          </div>
+          
+          <!-- Filtros de Tipo -->
+          <div class="mb-0">
+            <label class="form-label fw-bold">Tipo de Actividad:</label>
+            <div class="btn-group" role="group">
+              <a href="{{ url_for('admin.global_statistics', tipo=None, periodo=periodo) }}" 
+                 class="btn btn-outline-success type-btn {{ 'active' if not filtro_tipo else '' }}">
+                🔄 Todas las Actividades
+              </a>
+              <a href="{{ url_for('admin.global_statistics', tipo='ejercicio', periodo=periodo) }}" 
+                 class="btn btn-outline-success type-btn {{ 'active' if filtro_tipo == 'ejercicio' else '' }}">
+                💪 Solo Ejercicio
+              </a>
+              <a href="{{ url_for('admin.global_statistics', tipo='estudio', periodo=periodo) }}" 
+                 class="btn btn-outline-success type-btn {{ 'active' if filtro_tipo == 'estudio' else '' }}">
+                📚 Solo Estudio
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estadísticas Principales -->
+  <div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card stats-card h-100">
+        <div class="card-body text-center">
+          <div class="stats-icon mb-2">
+            <i class="fas fa-users"></i>
+          </div>
+          <h3 class="mb-1">{{ stats.usuarios_totales or 0 }}</h3>
+          <p class="mb-0 opacity-75">Usuarios Totales</p>
+          <small class="opacity-50">{{ stats.usuarios_activos or 0 }} activos en el período</small>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card stats-card h-100">
+        <div class="card-body text-center">
+          <div class="stats-icon mb-2">
+            <i class="fas fa-list-check"></i>
+          </div>
+          <h3 class="mb-1">{{ stats.rutinas_creadas or 0 }}</h3>
+          <p class="mb-0 opacity-75">Rutinas Creadas</p>
+          <small class="opacity-50">{{ stats.rutinas_ejercicio or 0 }} ejercicio, {{ stats.rutinas_estudio or 0 }} estudio</small>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card stats-card h-100">
+        <div class="card-body text-center">
+          <div class="stats-icon mb-2">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <h3 class="mb-1">{{ stats.actividades_completadas or 0 }}</h3>
+          <p class="mb-0 opacity-75">Actividades Completadas</p>
+          <small class="opacity-50">{{ stats.actividades_ejercicio or 0 }} ejercicio, {{ stats.actividades_estudio or 0 }} estudio</small>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card stats-card h-100">
+        <div class="card-body text-center">
+          <div class="stats-icon mb-2">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          {% set actividades = stats.actividades_completadas or 0 %}
+          {% set rutinas = stats.rutinas_creadas or 0 %}
+          {% set tasa_completado = (actividades / rutinas * 100) if rutinas > 0 else 0 %}
+          <h3 class="mb-1">{{ "%.1f"|format(tasa_completado) }}%</h3>
+          <p class="mb-0 opacity-75">Tasa de Completado</p>
+          <small class="opacity-50">Actividades vs Rutinas</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficos -->
+  <div class="row mb-4">
+    <!-- Gráfico de Uso por Período -->
+    <div class="col-lg-8 mb-4">
+      <div class="chart-container">
+        <h5 class="mb-3">📈 Actividades Completadas por {{ periodo.title() }}</h5>
+        <canvas id="usoChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+    
+    <!-- Gráfico de Actividades por Tipo -->
+    <div class="col-lg-4 mb-4">
+      <div class="chart-container">
+        <h5 class="mb-3">🎯 Distribución por Tipo</h5>
+        <canvas id="tipoChart" width="200" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico de Crecimiento de Usuarios -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="chart-container">
+        <h5 class="mb-3">👥 Crecimiento de Usuarios por {{ periodo.title() }}</h5>
+        <canvas id="crecimientoChart" width="400" height="150"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tablas de Datos -->
+  <div class="row">
+    <!-- Rutinas Más Populares -->
+    <div class="col-lg-6 mb-4">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th colspan="3" class="text-center">
+                <i class="fas fa-trophy me-2"></i>Rutinas Más Populares
+              </th>
+            </tr>
+            <tr>
+              <th>Rutina</th>
+              <th>Tipo</th>
+              <th>Usos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for rutina in stats.rutinas_mas_populares[:10] %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <i class="fas fa-{{ 'dumbbell' if rutina.tipo == 'ejercicio' else 'book' }} me-2 text-primary"></i>
+                  {{ rutina.nombre[:30] }}{% if rutina.nombre|length > 30 %}...{% endif %}
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-{{ 'success' if rutina.tipo == 'ejercicio' else 'info' }}">
+                  {{ rutina.tipo.title() }}
+                </span>
+              </td>
+              <td class="fw-bold">{{ rutina.usos or 0 }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="3" class="text-center text-muted">No hay datos disponibles</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- Usuarios Más Activos -->
+    <div class="col-lg-6 mb-4">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th colspan="2" class="text-center">
+                <i class="fas fa-star me-2"></i>Usuarios Más Activos
+              </th>
+            </tr>
+            <tr>
+              <th>Usuario</th>
+              <th>Actividades</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for usuario in stats.usuarios_mas_activos[:10] %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <i class="fas fa-user-circle me-2 text-primary"></i>
+                  {{ usuario.nombre }} {{ usuario.apellido }}
+                </div>
+              </td>
+              <td class="fw-bold">{{ usuario.actividades_completadas or 0 }}</td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="2" class="text-center text-muted">No hay usuarios activos</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Datos para los gráficos con validación
+const usoDataRaw = {{ stats.uso_por_periodo | tojson }};
+const tipoDataRaw = {{ stats.actividades_por_tipo | tojson }};
+const crecimientoDataRaw = {{ stats.crecimiento_usuarios | tojson }};
+
+// Validar y procesar datos
+const usoData = Array.isArray(usoDataRaw) && usoDataRaw.length > 0 ? usoDataRaw : [];
+const tipoData = Array.isArray(tipoDataRaw) && tipoDataRaw.length > 0 ? tipoDataRaw : [];
+const crecimientoData = Array.isArray(crecimientoDataRaw) && crecimientoDataRaw.length > 0 ? crecimientoDataRaw : [];
+
+// Función auxiliar para mostrar mensaje de sin datos
+function createEmptyChart(ctx, type, message = 'No hay datos disponibles') {
+  return new Chart(ctx, {
+    type: type === 'doughnut' ? 'doughnut' : type,
+    data: {
+      labels: [message],
+      datasets: [{
+        data: [1],
+        backgroundColor: ['rgba(108, 117, 125, 0.3)'],
+        borderColor: ['rgba(108, 117, 125, 0.5)'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          enabled: false
+        }
+      }
+    }
+  });
+}
+
+// Gráfico de uso por período
+const usoCtx = document.getElementById('usoChart').getContext('2d');
+if (usoData.length > 0) {
+  new Chart(usoCtx, {
+    type: 'line',
+    data: {
+      labels: usoData.map(d => d.fecha || 'Sin fecha'),
+      datasets: [{
+        label: 'Actividades Completadas',
+        data: usoData.map(d => d.actividades || 0),
+        borderColor: 'rgb(102, 126, 234)',
+        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0,0,0,0.1)'
+          }
+        },
+        x: {
+          grid: {
+            color: 'rgba(0,0,0,0.1)'
+          }
+        }
+      }
+    }
+  });
+} else {
+  createEmptyChart(usoCtx, 'line', 'Sin actividades registradas');
+}
+
+// Gráfico de tipo de actividades
+const tipoCtx = document.getElementById('tipoChart').getContext('2d');
+if (tipoData.length > 0) {
+  new Chart(tipoCtx, {
+    type: 'doughnut',
+    data: {
+      labels: tipoData.map(d => d.tipo_actividad ? d.tipo_actividad.charAt(0).toUpperCase() + d.tipo_actividad.slice(1) : 'Sin tipo'),
+      datasets: [{
+        data: tipoData.map(d => d.total || 0),
+        backgroundColor: [
+          'rgba(102, 126, 234, 0.8)',
+          'rgba(67, 160, 71, 0.8)',
+          'rgba(255, 152, 0, 0.8)',
+          'rgba(156, 39, 176, 0.8)'
+        ],
+        borderWidth: 2,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom'
+        }
+      }
+    }
+  });
+} else {
+  createEmptyChart(tipoCtx, 'doughnut', 'Sin tipos de actividad');
+}
+
+// Gráfico de crecimiento de usuarios
+const crecimientoCtx = document.getElementById('crecimientoChart').getContext('2d');
+if (crecimientoData.length > 0) {
+  new Chart(crecimientoCtx, {
+    type: 'bar',
+    data: {
+      labels: crecimientoData.map(d => d.fecha || 'Sin fecha'),
+      datasets: [{
+        label: 'Nuevos Usuarios',
+        data: crecimientoData.map(d => d.nuevos_usuarios || 0),
+        backgroundColor: 'rgba(67, 160, 71, 0.8)',
+        borderColor: 'rgb(67, 160, 71)',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0,0,0,0.1)'
+          }
+        },
+        x: {
+          grid: {
+            color: 'rgba(0,0,0,0.1)'
+          }
+        }
+      }
+    }
+  });
+} else {
+  createEmptyChart(crecimientoCtx, 'bar', 'Sin datos de usuarios');
+}
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0,0,0,0.1)'
+        }
+      },
+      x: {
+        grid: {
+          color: 'rgba(0,0,0,0.1)'
+        }
+      }
+    }
+  }
+});
+</script>
+{% endblock %}

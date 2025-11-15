@@ -1,0 +1,264 @@
+<!-- Sidebar Bootstrap personalizada -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+
+<!-- Overlay para móvil -->
+<div class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<nav class="d-flex flex-column flex-shrink-0 sidebar-custom bg-light" id="sidebar">
+  <ul class="nav nav-pills flex-column mb-auto">
+    <li class="nav-item">
+      <a href="/" class="nav-link" aria-current="page" data-tooltip="Inicio">
+        <span class="me-2">🏠</span>
+        <span class="link-text">Inicio</span>
+      </a>
+    </li>
+    <li>
+      <a href="/planificador" class="nav-link" data-tooltip="Planificador">
+        <span class="me-2">📅</span>
+        <span class="link-text">Planificador</span>
+      </a>
+    </li>
+    <li>
+      <a href="/lista_diaria" class="nav-link" data-tooltip="Lista diaria">
+        <span class="me-2">⏰</span>
+        <span class="link-text">Lista diaria</span>
+      </a>
+    </li>
+    <li>
+      <a href="/progreso" class="nav-link" data-tooltip="Progreso">
+        <span class="me-2">📊</span>
+        <span class="link-text">Progreso</span>
+      </a>
+    </li>
+  </ul>
+  <hr>
+  <ul class="nav nav-pills flex-column mb-auto">
+    <li>
+      <a href="/community" class="nav-link" data-tooltip="Comunidad">
+        <span class="me-2">🌐</span>
+        <span class="link-text">Comunidad</span>
+      </a>
+    </li>
+    <li>
+      <a href="/recommendations" class="nav-link" data-tooltip="Recomendaciones">
+        <span class="me-2">💡</span>
+        <span class="link-text">Recomendaciones</span>
+      </a>
+    </li>
+  </ul>
+  <hr>
+  <ul class="nav nav-pills flex-column mb-auto">
+    <li>
+      <a href="/estadisticas" class="nav-link" data-tooltip="Estadísticas">
+        <span class="me-2">📈</span>
+        <span class="link-text">Estadísticas</span>
+      </a>
+    </li>
+    <li>
+      <a href="#" class="nav-link" data-tooltip="Análisis de hábitos">
+        <span class="me-2">🔎</span>
+        <span class="link-text">Análisis de hábitos</span>
+      </a>
+    </li>
+    <li>
+      <a href="#" class="nav-link" data-tooltip="Historial exportable">
+        <span class="me-2">📂</span>
+        <span class="link-text">Historial exportable</span>
+      </a>
+    </li>
+  </ul>
+  <hr>
+  <ul class="nav nav-pills flex-column mb-auto">
+    <li>
+      <a href="/configuracion" class="nav-link" data-tooltip="Configuración">
+        <span class="me-2">⚙️</span>
+        <span class="link-text">Configuración</span>
+      </a>
+    </li>
+    <li style="margin-top:10px;">
+      <a href="/notifications" class="nav-link" data-tooltip="Notificaciones">
+        <span class="me-2">🔔</span>
+        <span class="link-text">Notificaciones</span>
+        <span class="badge bg-danger ms-2">{{ user_unread_notifications or 0 }}</span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Variables globales para el estado de la sidebar
+let sidebarCollapsed = false; // Por defecto expandida en desktop
+let isMobile = window.innerWidth <= 1200; // Cambio el breakpoint
+
+// Inicializar estado de la sidebar al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+  initializeSidebar();
+  setActiveLink();
+  
+  // Escuchar cambios de tamaño de ventana
+  window.addEventListener('resize', handleResize);
+});
+
+// Función principal para alternar la sidebar
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const container = document.querySelector('.container');
+  const overlay = document.querySelector('.sidebar-overlay');
+  
+  if (isMobile) {
+    // En pantallas pequeñas: mostrar/ocultar como overlay
+    sidebar.classList.toggle('show');
+    overlay.classList.toggle('show');
+  } else {
+    // En desktop con pantalla grande: comportamiento normal
+    sidebarCollapsed = !sidebarCollapsed;
+    sidebar.classList.toggle('collapsed', sidebarCollapsed);
+    container.classList.toggle('sidebar-collapsed', sidebarCollapsed);
+    
+    // Guardar estado en localStorage
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+    
+    // Cambiar icono del botón
+    updateToggleIcon();
+  }
+}
+
+// Cerrar sidebar (solo para overlay en pantallas pequeñas)
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  
+  if (isMobile) {
+    sidebar.classList.remove('show');
+    overlay.classList.remove('show');
+  }
+}
+
+// Actualizar icono del botón de toggle
+function updateToggleIcon() {
+  const toggleBtn = document.getElementById('sidebarToggleBtn');
+  if (!toggleBtn) return;
+  
+  const icon = toggleBtn.querySelector('i');
+  if (!icon) return;
+  
+  if (sidebarCollapsed) {
+    icon.className = 'fas fa-chevron-right';
+    toggleBtn.classList.add('collapsed');
+  } else {
+    icon.className = 'fas fa-bars';
+    toggleBtn.classList.remove('collapsed');
+  }
+}
+
+// Inicializar sidebar al cargar
+function initializeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const container = document.querySelector('.container');
+  const overlay = document.querySelector('.sidebar-overlay');
+  
+  // Añadir clase para desactivar transiciones durante inicialización
+  sidebar.classList.add('no-transition');
+  if (container) {
+    container.classList.add('no-transition');
+  }
+  if (overlay) {
+    overlay.classList.add('no-transition');
+  }
+  
+  isMobile = window.innerWidth <= 1200;
+  
+  if (isMobile) {
+    // En pantallas pequeñas: asegurarse de que esté oculta sin animación
+    const isCurrentlyShowing = sidebar.classList.contains('show');
+    
+    if (isCurrentlyShowing) {
+      sidebar.classList.remove('show');
+    }
+    sidebar.classList.remove('collapsed');
+    if (container) {
+      container.classList.remove('sidebar-collapsed');
+    }
+    if (overlay && overlay.classList.contains('show')) {
+      overlay.classList.remove('show');
+    }
+  } else {
+    // En pantallas grandes: verificar estado actual antes de cambiar
+    sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    const isCurrentlyCollapsed = sidebar.classList.contains('collapsed');
+    const containerIsCollapsed = container ? container.classList.contains('sidebar-collapsed') : false;
+    
+    // Solo cambiar si el estado actual es diferente al deseado
+    if (isCurrentlyCollapsed !== sidebarCollapsed) {
+      sidebar.classList.toggle('collapsed', sidebarCollapsed);
+    }
+    if (container && containerIsCollapsed !== sidebarCollapsed) {
+      container.classList.toggle('sidebar-collapsed', sidebarCollapsed);
+    }
+    updateToggleIcon();
+  }
+  
+  // Remover clases no-transition después de la inicialización
+  requestAnimationFrame(() => {
+    sidebar.classList.remove('no-transition');
+    if (container) {
+      container.classList.remove('no-transition');
+    }
+    if (overlay) {
+      overlay.classList.remove('no-transition');
+    }
+  });
+}
+
+// Manejar cambio de tamaño de ventana
+function handleResize() {
+  const newIsMobile = window.innerWidth <= 1200;
+  
+  if (newIsMobile !== isMobile) {
+    const sidebar = document.getElementById('sidebar');
+    const container = document.querySelector('.container');
+    
+    // Desactivar transiciones durante el redimensionamiento
+    sidebar.style.transition = 'none';
+    if (container) {
+      container.style.transition = 'none';
+    }
+    
+    isMobile = newIsMobile;
+    initializeSidebar();
+    
+    // Reactivar transiciones
+    setTimeout(() => {
+      sidebar.style.transition = '';
+      if (container) {
+        container.style.transition = '';
+      }
+    }, 50);
+  }
+}
+
+// Marcar enlace activo según la URL actual
+function setActiveLink() {
+  const currentPath = window.location.pathname;
+  const links = document.querySelectorAll('.sidebar-custom .nav-link');
+  
+  links.forEach(link => {
+    link.classList.remove('active');
+    const href = link.getAttribute('href');
+    
+    if (href === currentPath || (currentPath === '/' && href === '/')) {
+      link.classList.add('active');
+    }
+  });
+}
+
+// Cerrar sidebar en móvil al hacer click en un enlace
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.sidebar-custom .nav-link') && isMobile) {
+    setTimeout(closeSidebar, 100);
+  }
+});
+</script>

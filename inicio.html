@@ -1,0 +1,988 @@
+<!-- templates/inicio.html -->
+{% extends "base.html" %}
+
+{% block title %}Inicio - FocusFit{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/inicio.css') }}">
+<style>
+  /* Efectos hover para las cards principales */
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+  }
+  
+  /* Botones más modernos */
+  .btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-sm {
+    padding: 0.375rem 1rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Mejoras en spacing y tipografía */
+  .fade-bounce {
+    background: linear-gradient(135deg, #295bbe 0%, #4a90e2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Bordes más suaves */
+  .border-bottom {
+    border-color: rgba(0,0,0,0.08) !important;
+  }
+  
+  /* Badges modernos */
+  .badge {
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+  }
+  
+  /* Headers de cards más limpios */
+  .card-header h6 {
+    letter-spacing: 0.5px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Encabezado -->
+<div class="welcome-text-container mb-4">
+  <h2 class="fade-bounce fs-3 fw-bold text-dark mb-2">Bienvenido, {{ usuario.nombre }}</h2>
+  <p class="fade-subtitle text-muted fs-6 mb-0">Organiza tus rutinas y alcanza tus objetivos</p>
+</div>
+
+<!-- ADMIN BANNERS (desde panel admin) -->
+{% if admin_banners and admin_banners|length > 0 %}
+<div class="row mt-3 mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm bg-gradient" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+      <div class="card-body d-flex gap-3 flex-wrap align-items-center py-3">
+        {% for b in admin_banners %}
+          <div class="admin-banner-item d-flex align-items-center" style="min-width:160px;">
+            {% if b.imagen %}
+              <img src="{{ url_for('static', filename=(b.imagen if b.imagen.startswith('img/') else 'img/community/' ~ b.imagen)) }}" alt="banner" class="rounded-3" style="max-height:56px; width:56px; object-fit:cover;"/>
+            {% endif %}
+            <div class="ms-3">
+              <div class="fw-semibold text-dark small">{{ b.titulo or b.title }}</div>
+              <div class="text-muted" style="font-size: 0.8rem;">{{ b.texto or b.body }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Sección principal con tarjetas -->
+<div class="row g-4 mb-4">
+
+  <!-- Mis Rutinas -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.2s ease, box-shadow 0.2s ease;">
+      <div class="card-header text-center text-white border-0 bg-primary" style="padding: 1rem;">
+        <h6 class="mb-0 fw-semibold">Mis Rutinas</h6>
+      </div>
+      <div class="card-body p-4">
+        <p class="text-muted mb-3">Visualiza o crea nuevas rutinas de estudio y ejercicio.</p>
+        <div class="d-flex gap-2 mb-3">
+          <a href="/mis_rutinas" class="btn btn-outline-primary btn-sm px-3 py-2 flex-fill">Ver rutinas</a>
+          <a href="/crear_rutina" class="btn btn-primary btn-sm px-3 py-2 flex-fill">Crear rutina</a>
+        </div>
+
+        {% if rutinas %}
+        <div class="border-top pt-3 mt-3">
+          {% for r in rutinas[:3] %}
+          <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-light">
+            <div class="flex-grow-1">
+              <div class="fw-medium text-dark">{{ r.nombre }}</div>
+              <div class="text-muted small">{{ r.descripcion or '' }}</div>
+            </div>
+            <a href="{{ url_for('ver_rutina', id_rutina=r.id) }}" class="btn btn-sm btn-outline-secondary">Abrir</a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="mt-3 text-center py-3">
+          <p class="text-muted small mb-0">No hay rutinas. Crea la primera.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista diaria solo con items no completados -->
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.2s ease, box-shadow 0.2s ease;">
+      <div class="card-header text-center text-white border-0 bg-success" style="padding: 1rem;">
+        <h6 class="mb-0 fw-semibold">Lista diaria</h6>
+      </div>
+      <div class="card-body p-4">
+        <p class="text-muted mb-3">Actividades pendientes para hoy:</p>
+        {% set pendientes = lista_diaria | selectattr('completado', 'equalto', False) | list %}
+        {% if pendientes and pendientes|length > 0 %}
+        <div class="border-top pt-3">
+          {% for item in pendientes %}
+          <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-light">
+            <div class="flex-grow-1">
+              <div class="fw-medium text-dark">{{ item.titulo }}</div>
+              <small class="text-muted">
+                {{ item.horario or '' }}
+                {% if item.series %} | {{ item.series }}x{{ item.repeticiones }}{% endif %}
+                {% if item.tiempo %} | {{ item.tiempo }} min{% endif %}
+              </small>
+            </div>
+            <button type="button" 
+                    class="btn btn-sm btn-outline-success btn-marcar"
+                    data-id="{{ item.id }}"
+                    data-completado="false"
+                    data-dia="{{ dia_actual[:3] }}">
+              Hecho
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-3">
+          <p class="text-muted small mb-0">No tienes actividades pendientes hoy.</p>
+        </div>
+        {% endif %}
+        
+        <div class="mt-3 text-center">
+          <a href="/lista_diaria" class="btn btn-success btn-sm px-4">Ver lista completa</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="col-md-12 col-lg-4">
+    <div class="card h-100 border-0 shadow-sm" style="transition: transform 0.2s ease, box-shadow 0.2s ease;">
+      <div class="card-header text-center text-dark border-0 bg-warning" style="padding: 1rem;">
+        <h6 class="mb-0 fw-semibold">Estadísticas</h6>
+      </div>
+      <div class="card-body p-4">
+        <p class="text-muted mb-3">Resumen rápido de tu progreso:</p>
+        {% if estadisticas %}
+        <div class="row text-center align-items-center g-3">
+          <div class="col-6">
+            <div class="d-flex flex-column align-items-center">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                {% if racha_activa %}
+                  <img src="{{ url_for('static', filename='img/fire-RACHAA.png') }}" alt="Racha activa" width="40" height="40">
+                {% else %}
+                  <img src="{{ url_for('static', filename='img/fire-racha.png') }}" alt="Racha inactiva" width="40" height="40">
+                {% endif %}
+                <div>
+                  <h5 class="mb-0 fw-bold text-primary">{{ estadisticas.rachas or 0 }}</h5>
+                  <small class="text-muted">Días</small>
+                </div>
+              </div>
+              <span class="badge bg-light text-dark">Rachas</span>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="text-center">
+              <h5 class="mb-1 fw-bold text-warning">{{ estadisticas.cumplimiento_porcentaje or 0 }}%</h5>
+              <span class="badge bg-light text-dark">Cumplimiento</span>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="text-center py-3">
+          <p class="text-muted small mb-0">No hay datos suficientes para mostrar estadísticas.</p>
+        </div>
+        {% endif %}
+        <div class="mt-3 text-center">
+          <a href="/estadisticas" class="btn btn-warning btn-sm px-4 text-dark">Ver estadísticas completas</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Contenido destacado desde admin: rutinas o recomendaciones -->
+{% if admin_featured and admin_featured|length > 0 %}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow-lg border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px; overflow: hidden;">
+      <div class="card-header border-0 text-white" style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div class="d-flex align-items-center">
+              <i class="fas fa-star me-2 text-warning"></i>
+              <h5 class="mb-0 fw-bold">Contenido Destacado</h5>
+            </div>
+            <small class="opacity-75">Contenido especial seleccionado para ti</small>
+          </div>
+          {% if admin_featured|length > 2 %}
+          <div>
+            <button id="toggleFeaturedBtn" class="btn btn-sm btn-outline-light rounded-pill" onclick="toggleFeaturedContent()">
+              <i id="toggleIcon" class="fas fa-chevron-down me-1"></i>
+              <span id="toggleText">Ver todos ({{ admin_featured|length }})</span>
+            </button>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <!-- Contenido inicial (primeros 2) -->
+        <div id="initialFeatured">
+          {% for it in admin_featured[:2] %}
+            <div class="featured-item position-relative" style="background: rgba(255, 255, 255, 0.95); margin: 1rem; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);">
+              <div class="row g-0 align-items-center">
+                <div class="col-md-8">
+                  <div class="p-4">
+                    <div class="mb-3">
+                      <span class="badge bg-warning text-dark fw-bold">
+                        <i class="fas fa-crown me-1"></i>Destacado
+                      </span>
+                    </div>
+                    <h4 class="fw-bold text-dark mb-3">{{ it.titulo or it.title }}</h4>
+                    <p class="text-muted mb-3 lh-lg">{{ it.texto or it.body }}</p>
+                    <div class="d-flex gap-2">
+                      <button class="btn btn-primary btn-sm rounded-pill px-3" 
+                              data-title="{{ it.titulo or it.title }}"
+                              data-content="{{ it.texto or it.body }}"
+                              data-image="{% if it.url_imagen and it.url_imagen != '' and it.url_imagen != 'None' %}{{ url_for('static', filename='img/admin_avatars/' ~ it.url_imagen) }}{% endif %}">
+                        <i class="fas fa-eye me-1"></i>Ver detalles
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="featured-image-container position-relative" style="height: 200px; overflow: hidden;">
+                    {% if it.url_imagen and it.url_imagen != '' and it.url_imagen != 'None' %}
+                      <img src="{{ url_for('static', filename='img/admin_avatars/' ~ it.url_imagen) }}" 
+                           alt="{{ it.titulo or it.title }}" 
+                           class="featured-image w-100 h-100"
+                           style="object-fit: cover; cursor: pointer; transition: all 0.3s ease;"
+                           data-title="{{ it.titulo or it.title }}"
+                           data-content="{{ it.texto or it.body }}"
+                           data-image="{{ url_for('static', filename='img/admin_avatars/' ~ it.url_imagen) }}"
+                           onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'w-100 h-100 d-flex align-items-center justify-content-center\' style=\'background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);\'><div class=\'text-center text-muted\'><i class=\'fas fa-image fa-3x mb-2 opacity-50\'></i><p class=\'small mb-0\'>Sin imagen</p></div></div>'">
+                    {% else %}
+                      <!-- Imagen de placeholder cuando no hay imagen -->
+                      <div class="w-100 h-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <div class="text-center text-muted">
+                          <i class="fas fa-image fa-3x mb-2 opacity-50"></i>
+                          <p class="small mb-0">Sin imagen</p>
+                        </div>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- Contenido expandido (resto de elementos) -->
+        {% if admin_featured|length > 2 %}
+        <div id="expandedFeatured" style="display: none;">
+          {% for it in admin_featured[2:] %}
+            <div class="featured-item-compact position-relative" style="background: rgba(255, 255, 255, 0.95); margin: 1rem; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);">
+              <div class="row g-0 align-items-center">
+                <div class="col-md-2">
+                  <div class="featured-image-container-compact position-relative" style="height: 80px; overflow: hidden;">
+                    {% if it.url_imagen and it.url_imagen != '' and it.url_imagen != 'None' %}
+                      <img src="{{ url_for('static', filename='img/admin_avatars/' ~ it.url_imagen) }}" 
+                           alt="{{ it.titulo or it.title }}" 
+                           class="featured-image w-100 h-100"
+                           style="object-fit: cover; cursor: pointer; transition: all 0.3s ease;"
+                           data-title="{{ it.titulo or it.title }}"
+                           data-content="{{ it.texto or it.body }}"
+                           data-image="{{ url_for('static', filename='img/admin_avatars/' ~ it.url_imagen) }}">
+                    {% else %}
+                      <div class="w-100 h-100 d-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <i class="fas fa-image text-muted"></i>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-8">
+                  <div class="p-3">
+                    <div class="d-flex align-items-center mb-2">
+                      <span class="badge bg-warning text-dark fw-bold me-2" style="font-size: 0.7rem;">
+                        <i class="fas fa-crown me-1"></i>Destacado
+                      </span>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-2">{{ it.titulo or it.title }}</h6>
+                    <p class="text-muted mb-0 small" style="line-height: 1.4;">
+                      {{ (it.texto or it.body)[:100] }}{% if (it.texto or it.body)|length > 100 %}...{% endif %}
+                    </p>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="p-3 text-center">
+                    <button class="btn btn-primary btn-sm rounded-pill" 
+                            data-title="{{ it.titulo or it.title }}"
+                            data-content="{{ it.texto or it.body }}"
+                            data-image="{% if it.url_imagen and it.url_imagen != '' and it.url_imagen != 'None' %}{{ url_for('static', filename='img/admin_avatars/' ~ it.url_imagen) }}{% endif %}"
+                            style="font-size: 0.8rem;">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para contenido destacado -->
+<div class="modal fade" id="featuredModal" tabindex="-1" aria-labelledby="featuredModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0" style="border-radius: 20px; overflow: hidden;">
+      <div class="modal-header bg-gradient text-white border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <h5 class="modal-title fw-bold" id="featuredModalLabel">
+          <i class="fas fa-star me-2"></i>Contenido Destacado
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-0">
+        <div id="featuredModalImage" class="text-center mb-3" style="display: none;">
+          <img id="modalFeaturedImg" src="" alt="" class="img-fluid" style="max-height: 400px; border-radius: 12px;">
+        </div>
+        <div class="p-4">
+          <h4 id="modalFeaturedTitle" class="fw-bold text-dark mb-3"></h4>
+          <p id="modalFeaturedContent" class="text-muted lh-lg"></p>
+        </div>
+      </div>
+      <div class="modal-footer border-0 bg-light">
+        <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Funciones para el contenido destacado
+function openFeaturedModal(title, content, imageSrc) {
+  console.log('openFeaturedModal called with:', { title, content, imageSrc });
+  
+  // Limpiar y establecer el título
+  const modalTitle = document.getElementById('modalFeaturedTitle');
+  const modalContent = document.getElementById('modalFeaturedContent');
+  const modalImg = document.getElementById('modalFeaturedImg');
+  const modalImageContainer = document.getElementById('featuredModalImage');
+  
+  if (modalTitle) modalTitle.textContent = title || 'Sin título';
+  if (modalContent) modalContent.textContent = content || 'Sin contenido';
+  
+  // Manejar la imagen
+  if (imageSrc && imageSrc !== '' && imageSrc !== 'None' && imageSrc !== 'undefined') {
+    console.log('Showing image:', imageSrc);
+    if (modalImg) {
+      modalImg.src = imageSrc;
+      modalImg.alt = title || 'Imagen destacada';
+    }
+    if (modalImageContainer) {
+      modalImageContainer.style.display = 'block';
+    }
+  } else {
+    console.log('No image to show');
+    if (modalImageContainer) {
+      modalImageContainer.style.display = 'none';
+    }
+  }
+  
+  // Abrir el modal
+  try {
+    const modalElement = document.getElementById('featuredModal');
+    if (modalElement) {
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+      console.log('Modal opened successfully');
+    } else {
+      console.error('Modal element not found');
+    }
+  } catch (error) {
+    console.error('Error opening modal:', error);
+  }
+}
+
+// Nueva función que usa data attributes para evitar problemas con comillas
+function openFeaturedModalFromData(element) {
+  const title = element.dataset.title || element.getAttribute('data-title');
+  const content = element.dataset.content || element.getAttribute('data-content');
+  const imageSrc = element.dataset.image || element.getAttribute('data-image');
+  
+  console.log('openFeaturedModalFromData called with:', { title, content, imageSrc });
+  openFeaturedModal(title, content, imageSrc);
+}
+
+// Función para toggle del contenido destacado expandido
+function toggleFeaturedContent() {
+  const expandedContent = document.getElementById('expandedFeatured');
+  const toggleIcon = document.getElementById('toggleIcon');
+  const toggleText = document.getElementById('toggleText');
+  const totalItems = {{ admin_featured|length if admin_featured else 0 }};
+  
+  if (expandedContent.style.display === 'none' || expandedContent.style.display === '') {
+    // Expandir
+    expandedContent.style.display = 'block';
+    toggleIcon.className = 'fas fa-chevron-up me-1';
+    toggleText.textContent = 'Ver menos';
+    
+    // Agregar animación suave
+    expandedContent.style.opacity = '0';
+    expandedContent.style.transform = 'translateY(-20px)';
+    setTimeout(() => {
+      expandedContent.style.transition = 'all 0.3s ease';
+      expandedContent.style.opacity = '1';
+      expandedContent.style.transform = 'translateY(0)';
+      
+      // Re-inicializar event listeners para nuevos elementos
+      if (typeof window.reinitializeFeaturedElements === 'function') {
+        window.reinitializeFeaturedElements();
+      }
+    }, 10);
+  } else {
+    // Contraer
+    expandedContent.style.transition = 'all 0.3s ease';
+    expandedContent.style.opacity = '0';
+    expandedContent.style.transform = 'translateY(-20px)';
+    
+    setTimeout(() => {
+      expandedContent.style.display = 'none';
+      toggleIcon.className = 'fas fa-chevron-down me-1';
+      toggleText.textContent = `Ver todos (${totalItems})`;
+    }, 300);
+  }
+}
+
+// Efectos hover para las imágenes destacadas
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM Content Loaded - Initializing featured content interactions');
+  
+  // Función para inicializar elementos destacados
+  function initializeFeaturedElements() {
+    // Inicializar efectos hover para imágenes principales
+    const featuredImages = document.querySelectorAll('.featured-image');
+    console.log('Found featured images:', featuredImages.length);
+    
+    featuredImages.forEach(img => {
+      // Remover listeners anteriores
+      img.removeEventListener('mouseenter', handleMouseEnter);
+      img.removeEventListener('mouseleave', handleMouseLeave);
+      img.removeEventListener('click', handleImageClick);
+      
+      // Agregar nuevos listeners
+      img.addEventListener('mouseenter', handleMouseEnter);
+      img.addEventListener('mouseleave', handleMouseLeave);
+      img.addEventListener('click', handleImageClick);
+    });
+    
+    // También agregar listeners a los botones
+    const detailButtons = document.querySelectorAll('[data-title]');
+    detailButtons.forEach(button => {
+      if (button.textContent.includes('Ver detalles') || button.innerHTML.includes('fa-eye')) {
+        // Remover listener anterior
+        button.removeEventListener('click', handleButtonClick);
+        // Agregar nuevo listener
+        button.addEventListener('click', handleButtonClick);
+      }
+    });
+  }
+  
+  // Funciones de manejo de eventos
+  function handleMouseEnter() {
+    this.style.transform = 'scale(1.05)';
+    this.style.filter = 'brightness(1.1)';
+  }
+  
+  function handleMouseLeave() {
+    this.style.transform = 'scale(1)';
+    this.style.filter = 'brightness(1)';
+  }
+  
+  function handleImageClick() {
+    console.log('Image clicked, opening modal...');
+    const title = this.getAttribute('data-title');
+    const content = this.getAttribute('data-content');
+    const imageSrc = this.getAttribute('data-image');
+    openFeaturedModal(title, content, imageSrc);
+  }
+  
+  function handleButtonClick() {
+    console.log('Button clicked, opening modal...');
+    const title = this.getAttribute('data-title');
+    const content = this.getAttribute('data-content');
+    const imageSrc = this.getAttribute('data-image');
+    openFeaturedModal(title, content, imageSrc);
+  }
+  
+  // Inicializar al cargar la página
+  initializeFeaturedElements();
+  
+  // Re-inicializar cuando se expande el contenido
+  window.reinitializeFeaturedElements = initializeFeaturedElements;
+  
+  // Verificar que Bootstrap está disponible
+  if (typeof bootstrap !== 'undefined') {
+    console.log('Bootstrap is available');
+  } else {
+    console.error('Bootstrap is not available');
+  }
+  
+  // Verificar que el modal existe
+  const modalElement = document.getElementById('featuredModal');
+  console.log('Modal element found:', modalElement !== null);
+});
+</script>
+
+<style>
+/* Estilos adicionales para contenido destacado */
+.featured-item {
+  transition: all 0.3s ease;
+}
+
+.featured-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15) !important;
+}
+
+.featured-item-compact {
+  transition: all 0.2s ease;
+}
+
+.featured-item-compact:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
+}
+
+.featured-image-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 0%, rgba(102, 126, 234, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.featured-image-container:hover::after {
+  opacity: 1;
+}
+
+.featured-image-container-compact::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 0%, rgba(102, 126, 234, 0.1) 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.featured-image-container-compact:hover::after {
+  opacity: 1;
+}
+
+/* Animación para el botón de toggle */
+#toggleFeaturedBtn {
+  transition: all 0.3s ease;
+}
+
+#toggleFeaturedBtn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+/* Animación para expandir contenido */
+#expandedFeatured {
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .featured-item .col-md-4 {
+    order: -1;
+  }
+  
+  .featured-image-container {
+    height: 150px !important;
+  }
+  
+  .featured-item-compact .col-md-2 {
+    order: -1;
+  }
+  
+  .featured-image-container-compact {
+    height: 60px !important;
+  }
+  
+  .featured-item-compact .col-md-8 .p-3 {
+    padding: 1rem !important;
+  }
+  
+  .featured-item-compact h6 {
+    font-size: 0.9rem;
+  }
+}
+</style>
+{% endif %}
+
+<!-- Recomendaciones publicadas por admin -->
+{% if admin_recommendations and admin_recommendations|length > 0 %}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header bg-primary text-white">Recomendaciones</div>
+      <div class="card-body">
+        <div class="list-group">
+          {% for rec in admin_recommendations %}
+            <div class="list-group-item d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-bold">{{ rec.titulo or rec.title }}</div>
+                <div class="small text-muted">{{ rec.actualizado_en }}</div>
+                <div>{{ rec.texto or rec.body }}</div>
+              </div>
+              {% if rec.imagen %}
+                <img src="{{ url_for('static', filename=(rec.imagen if rec.imagen.startswith('img/') else 'img/community/' ~ rec.imagen)) }}" alt="img" style="max-height:64px; margin-left:12px;"/>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        <div class="mt-3 text-end">
+          <a href="/recommendations" class="btn btn-outline-primary">Ver todas</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Comunidad (posts aprobados por admin o creados por admin) -->
+{% if community_posts and community_posts|length > 0 %}
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card shadow-sm">
+      <div class="card-header bg-info text-white">Comunidad</div>
+      <div class="card-body">
+        <div class="list-group">
+          {% for cp in community_posts %}
+            <div class="list-group-item d-flex justify-content-between align-items-start">
+              <div>
+                <div class="fw-bold">{{ cp.titulo or cp.title or cp.title }}</div>
+                <div class="small text-muted">{{ cp.created_at }}</div>
+                <div>{{ cp.texto or cp.summary or cp.body }}</div>
+              </div>
+              {% if cp.imagen or cp.image %}
+                <img src="{{ url_for('static', filename=( (cp.imagen if cp.imagen and cp.imagen.startswith('img/') else (cp.image if cp.image and cp.image.startswith('img/') else ('img/community/' ~ (cp.imagen or cp.image))) ) )) }}" alt="img" style="max-height:64px; margin-left:12px;"/>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        <div class="mt-3 text-end">
+          <a href="/community" class="btn btn-outline-info">Ver comunidad</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Progreso semanal dinámico -->
+<div class="row mt-5">
+  <div class="col-md-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header text-center text-white border-0 bg-info" style="padding: 1.25rem;">
+        <h5 class="mb-1 fw-semibold">Progreso Semanal</h5>
+        <small class="opacity-75">Actualización en tiempo real</small>
+      </div>
+      <div class="card-body p-4" id="progreso-semanal-container">
+        {% if progreso_semanal %}
+        <div class="row g-3" id="progreso-semanal-grid">
+          {% for dia in progreso_semanal %}
+          <div class="col">
+            <div class="text-center progreso-dia-card" 
+                 data-dia="{{ dia.dia }}" 
+                 id="progreso-dia-{{ dia.dia }}">
+              
+              <!-- Día de la semana -->
+              <h6 class="mb-2 {{ 'text-primary fw-bold' if dia.dia == dia_actual[:3] else 'text-muted' }}">
+                {{ dia.dia }}
+                {% if dia.dia == dia_actual[:3] %}
+                  <br><small class="badge bg-primary">HOY</small>
+                {% endif %}
+              </h6>
+              
+              <!-- Porcentaje principal -->
+              <div class="porcentaje-display mb-2" data-porcentaje="{{ dia.porcentaje }}">
+                <h4 class="mb-0 {{ 'text-success' if dia.porcentaje == 100 else 'text-warning' if dia.porcentaje >= 50 else 'text-danger' if dia.porcentaje > 0 else 'text-secondary' }}">
+                  <span class="porcentaje-valor">{{ dia.porcentaje }}</span>%
+                </h4>
+              </div>
+              
+              <!-- Barra de progreso circular o vertical -->
+              <div class="progreso-visual mb-2">
+                <div class="progress vertical-progress" style="height: 80px; width: 12px; margin: 0 auto;">
+                  <div class="progress-bar progress-bar-animated {{ 'bg-success' if dia.porcentaje == 100 else 'bg-warning' if dia.porcentaje >= 50 else 'bg-danger' if dia.porcentaje > 0 else 'bg-secondary' }}" 
+                       role="progressbar" 
+                       data-porcentaje="{{ dia.porcentaje }}">
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Estado del día -->
+              <div class="estado-dia">
+                {% if dia.porcentaje == 100 %}
+                  <span class="badge bg-success">✓ Perfecto</span>
+                {% elif dia.porcentaje >= 80 %}
+                  <span class="badge bg-info">⭐ Excelente</span>
+                {% elif dia.porcentaje >= 50 %}
+                  <span class="badge bg-warning">⚡ Regular</span>
+                {% elif dia.porcentaje > 0 %}
+                  <span class="badge bg-danger">📈 Bajo</span>
+                {% else %}
+                  <span class="badge bg-secondary">❌ Sin completar</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        
+        <!-- Resumen semanal -->
+        <div class="row mt-4">
+          <div class="col-md-12">
+            <div class="text-center p-4 rounded-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+              <div class="row g-3">
+                <div class="col-4">
+                  <h5 class="mb-1 text-primary fw-bold" id="promedio-semanal">
+                    {% set total = progreso_semanal | sum(attribute='porcentaje') %}
+                    {% set promedio = (total / progreso_semanal|length) | round %}
+                    {{ promedio }}%
+                  </h5>
+                  <small class="text-muted fw-medium">Promedio semanal</small>
+                </div>
+                <div class="col-4">
+                  <h5 class="mb-1 text-success fw-bold" id="dias-perfectos">
+                    {{ progreso_semanal | selectattr('porcentaje', 'equalto', 100) | list | length }}
+                  </h5>
+                  <small class="text-muted fw-medium">Días al 100%</small>
+                </div>
+                <div class="col-4">
+                  <h5 class="mb-1 text-info fw-bold" id="progreso-hoy">
+                    {% for dia in progreso_semanal %}
+                      {% if dia.dia == dia_actual[:3] %}{{ dia.porcentaje }}%{% endif %}
+                    {% endfor %}
+                  </h5>
+                  <small class="text-muted fw-medium">Progreso de hoy</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <h6 class="text-muted mb-2">¡Comienza tu journey!</h6>
+          <p class="mb-3">Crea tu primera rutina para ver el progreso semanal</p>
+          <a href="{{ url_for('crear_rutina') }}" class="btn btn-primary btn-sm px-4">Crear rutina</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Función para actualizar estadísticas en tiempo real
+function actualizarEstadisticasRacha() {
+    fetch('/api/estadisticas_actuales', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Actualizar días de racha
+            const rachaElement = document.querySelector('.fw-bold.text-primary');
+            if (rachaElement && data.rachas !== undefined) {
+                rachaElement.textContent = data.rachas;
+            }
+            
+            // Actualizar imagen de racha
+            const rachaImg = document.querySelector('img[alt*="Racha"]');
+            if (rachaImg && data.racha_activa !== undefined) {
+                if (data.racha_activa) {
+                    rachaImg.src = "{{ url_for('static', filename='img/fire-RACHAA.png') }}";
+                    rachaImg.alt = "Racha activa";
+                } else {
+                    rachaImg.src = "{{ url_for('static', filename='img/fire-racha.png') }}";
+                    rachaImg.alt = "Racha inactiva";
+                }
+            }
+            
+            // Actualizar porcentaje de cumplimiento
+            const cumplimientoElement = document.querySelector('.fw-bold.text-warning');
+            if (cumplimientoElement && data.cumplimiento_porcentaje !== undefined) {
+                cumplimientoElement.textContent = data.cumplimiento_porcentaje + '%';
+            }
+            
+            // Actualizar progreso semanal si existe
+            if (data.progreso_semanal) {
+                actualizarProgresoSemanal(data.progreso_semanal);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error al actualizar estadísticas:', error);
+    });
+}
+
+// Función para actualizar el progreso semanal
+function actualizarProgresoSemanal(progresoSemanal) {
+    progresoSemanal.forEach(dia => {
+        const diaElement = document.getElementById(`progreso-dia-${dia.dia}`);
+        if (diaElement) {
+            // Actualizar porcentaje
+            const porcentajeValor = diaElement.querySelector('.porcentaje-valor');
+            if (porcentajeValor) {
+                porcentajeValor.textContent = dia.porcentaje;
+            }
+            
+            // Actualizar color del porcentaje
+            const porcentajeDisplay = diaElement.querySelector('.porcentaje-display h4');
+            if (porcentajeDisplay) {
+                porcentajeDisplay.className = `mb-0 ${dia.porcentaje == 100 ? 'text-success' : dia.porcentaje >= 50 ? 'text-warning' : dia.porcentaje > 0 ? 'text-danger' : 'text-secondary'}`;
+            }
+            
+            // Actualizar barra de progreso
+            const progressBar = diaElement.querySelector('.progress-bar');
+            if (progressBar) {
+                progressBar.style.height = dia.porcentaje + '%';
+                progressBar.className = `progress-bar progress-bar-animated ${dia.porcentaje == 100 ? 'bg-success' : dia.porcentaje >= 50 ? 'bg-warning' : dia.porcentaje > 0 ? 'bg-danger' : 'bg-secondary'}`;
+            }
+            
+            // Actualizar badge de estado
+            const estadoDia = diaElement.querySelector('.estado-dia .badge');
+            if (estadoDia) {
+                if (dia.porcentaje == 100) {
+                    estadoDia.className = 'badge bg-success';
+                    estadoDia.textContent = '✓ Perfecto';
+                } else if (dia.porcentaje >= 80) {
+                    estadoDia.className = 'badge bg-info';
+                    estadoDia.textContent = '⭐ Excelente';
+                } else if (dia.porcentaje >= 50) {
+                    estadoDia.className = 'badge bg-warning';
+                    estadoDia.textContent = '⚡ Regular';
+                } else if (dia.porcentaje > 0) {
+                    estadoDia.className = 'badge bg-danger';
+                    estadoDia.textContent = '📈 Bajo';
+                } else {
+                    estadoDia.className = 'badge bg-secondary';
+                    estadoDia.textContent = '❌ Sin completar';
+                }
+            }
+        }
+    });
+    
+    // Actualizar resumen semanal
+    const total = progresoSemanal.reduce((sum, dia) => sum + dia.porcentaje, 0);
+    const promedio = Math.round(total / progresoSemanal.length);
+    const diasPerfectos = progresoSemanal.filter(dia => dia.porcentaje === 100).length;
+    
+    const promedioElement = document.getElementById('promedio-semanal');
+    if (promedioElement) {
+        promedioElement.textContent = promedio + '%';
+    }
+    
+    const diasPerfectosElement = document.getElementById('dias-perfectos');
+    if (diasPerfectosElement) {
+        diasPerfectosElement.textContent = diasPerfectos;
+    }
+    
+    // Actualizar progreso de hoy
+    const hoy = '{{ dia_actual[:3] }}';
+    const diaHoy = progresoSemanal.find(dia => dia.dia === hoy);
+    if (diaHoy) {
+        const progresoHoyElement = document.getElementById('progreso-hoy');
+        if (progresoHoyElement) {
+            progresoHoyElement.textContent = diaHoy.porcentaje + '%';
+        }
+    }
+}
+
+// Inicializar las barras de progreso cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    // Animar las barras de progreso
+    setTimeout(() => {
+        document.querySelectorAll('.progress-bar').forEach(bar => {
+            const porcentaje = bar.dataset.porcentaje || 0;
+            bar.style.height = porcentaje + '%';
+        });
+    }, 100);
+    
+    // Agregar listener personalizado para la página de inicio
+    window.addEventListener('taskCompleted', function(event) {
+        const { success, completado, itemId } = event.detail;
+        
+        if (success && completado) {
+            // Ocultar el item de la lista en la página de inicio
+            const button = document.querySelector(`[data-id="${itemId}"]`);
+            if (button) {
+                const listItem = button.closest('.d-flex');
+                if (listItem) {
+                    listItem.style.transition = 'opacity 0.3s ease';
+                    listItem.style.opacity = '0';
+                    setTimeout(() => {
+                        listItem.remove();
+                        
+                        // Verificar si no quedan más items pendientes
+                        const container = button.closest('.card-body');
+                        const pendientes = container.querySelectorAll('.btn-marcar[data-completado="false"]');
+                        if (pendientes.length === 0) {
+                            const cardBody = container.querySelector('.border-top').parentElement;
+                            cardBody.innerHTML = `
+                                <p class="text-muted mb-3">Actividades pendientes para hoy:</p>
+                                <div class="text-center py-3">
+                                    <div class="mb-3">
+                                        <i class="fas fa-check-circle fa-3x text-success"></i>
+                                    </div>
+                                    <h6 class="text-success fw-bold mb-2">¡Todas las tareas completadas!</h6>
+                                    <p class="text-muted small mb-0">Has terminado todas tus actividades de hoy.</p>
+                                </div>
+                                <div class="mt-3 text-center">
+                                    <a href="/lista_diaria" class="btn btn-success btn-sm px-4">Ver lista completa</a>
+                                </div>
+                            `;
+                        }
+                    }, 300);
+                }
+            }
+            
+            // Actualizar estadísticas después de un breve delay
+            setTimeout(() => {
+                actualizarEstadisticasRacha();
+            }, 500);
+        }
+    });
+});
+</script>
+{% endblock %}

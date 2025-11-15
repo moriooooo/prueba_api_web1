@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Perfil - FocusFit{% endblock %}
+
+{% block content %}
+<div class="card p-4" style="max-width:720px; margin:auto;">
+  <h3 class="mb-3">Editar perfil</h3>
+
+  <div class="d-flex align-items-center mb-4">
+    {% if usuario and usuario.avatar %}
+      <img src="{{ url_for('static', filename='img/avatars/' + usuario.avatar) }}" alt="Avatar" class="rounded-circle me-3" width="84" height="84">
+    {% else %}
+      <img src="{{ url_for('static', filename='img/logo_blanco.png') }}" alt="Avatar" class="rounded-circle me-3" width="84" height="84" style="background:#e9ecef; padding:8px;">
+    {% endif %}
+    <div>
+      <p class="mb-0"><strong>{{ usuario.nombre if usuario else 'Usuario' }}</strong></p>
+      <p class="text-muted mb-0">{{ usuario.correo if usuario else '' }}</p>
+    </div>
+  </div>
+
+  <form method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label for="correo" class="form-label">Correo</label>
+      <input type="email" class="form-control" id="correo" name="correo" value="{{ usuario.correo if usuario else '' }}" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="telefono" class="form-label">Teléfono</label>
+      <input type="text" class="form-control" id="telefono" name="telefono" value="{{ usuario.telefono if usuario and usuario.telefono else '' }}" placeholder="Opcional">
+    </div>
+    <div class="mb-3">
+      <label for="nombre" class="form-label">Nombre</label>
+      <input type="text" class="form-control" id="nombre" name="nombre" value="{{ usuario.nombre if usuario else '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="password" class="form-label">Nueva contraseña</label>
+      <input type="password" class="form-control" id="password" name="password" placeholder="Dejar en blanco para no cambiarla">
+    </div>
+
+    <div class="mb-3">
+      <label for="avatar" class="form-label">Foto de perfil</label>
+      <input class="form-control" type="file" id="avatar" name="avatar" accept="image/*">
+      <div class="form-text">Formatos aceptados: png, jpg, jpeg, gif. Se sobreescribirá la foto actual.</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,617 @@
+{% extends 'admin/admin_layout.html' %}
+{% block title %}Recomendaciones{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="h3 mb-0">
+        <i class="fas fa-lightbulb text-warning me-2"></i>Gestión de Recomendaciones
+      </h2>
+      <p class="text-muted mb-0">Administra las recomendaciones del sistema. Puedes eliminar contenido inapropiado que no cumpla con las normas.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <span class="badge bg-success fs-6">{{ items|selectattr("is_public", "equalto", 1)|list|length }} Públicas</span>
+      <span class="badge bg-secondary fs-6">{{ items|selectattr("is_public", "equalto", 0)|list|length }} Privadas</span>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-2-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <div class="h4 text-primary mb-1">{{ items|length }}</div>
+          <small class="text-muted">Total Recomendaciones</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <div class="h4 text-success mb-1">{{ items|selectattr("is_public", "equalto", 1)|list|length }}</div>
+          <small class="text-muted">Públicas</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <div class="h4 text-info mb-1">{{ items|selectattr("difficulty", "equalto", "facil")|list|length }}</div>
+          <small class="text-muted">Nivel Fácil</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <div class="h4 text-warning mb-1">{{ items|selectattr("difficulty", "equalto", "medio")|list|length }}</div>
+          <small class="text-muted">Nivel Medio</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <div class="h4 text-danger mb-1">{{ items|selectattr("difficulty", "equalto", "dificil")|list|length }}</div>
+          <small class="text-muted">Nivel Difícil</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <ul class="nav nav-pills mb-4" id="filterTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="all-tab" data-bs-toggle="pill" data-bs-target="#all-recommendations" type="button" role="tab">
+        <i class="fas fa-list me-2"></i>Todas ({{ items|length }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="public-tab" data-bs-toggle="pill" data-bs-target="#public-recommendations" type="button" role="tab">
+        <i class="fas fa-globe me-2"></i>Públicas ({{ items|selectattr("is_public", "equalto", 1)|list|length }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="exercise-tab" data-bs-toggle="pill" data-bs-target="#exercise-recommendations" type="button" role="tab">
+        <i class="fas fa-dumbbell me-2"></i>Ejercicio ({{ items|selectattr("tipo", "equalto", "ejercicio")|list|length }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="study-tab" data-bs-toggle="pill" data-bs-target="#study-recommendations" type="button" role="tab">
+        <i class="fas fa-book me-2"></i>Estudio ({{ items|selectattr("tipo", "equalto", "estudio")|list|length }})
+      </button>
+    </li>
+  </ul>
+
+  <!-- Recommendations Content -->
+  <div class="tab-content" id="filterTabsContent">
+    <!-- All Recommendations Tab -->
+    <div class="tab-pane fade show active" id="all-recommendations" role="tabpanel">
+      <div class="row g-4">
+        {% for it in items %}
+          <div class="col-xl-6 col-lg-12">
+            <div class="card border-0 shadow-sm h-100 {% if it.is_public %}border-success{% else %}border-secondary{% endif %}">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <div class="flex-grow-1">
+                    <h5 class="card-title mb-2">
+                      {% if it.tipo == 'ejercicio' %}
+                        <i class="fas fa-dumbbell text-success me-2"></i>
+                      {% else %}
+                        <i class="fas fa-book text-info me-2"></i>
+                      {% endif %}
+                      {{ it.title or it.titulo }}
+                    </h5>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <i class="fas fa-user text-muted"></i>
+                      <span class="text-muted small">{{ it.created_by or 'Sistema' }}</span>
+                      <span class="text-muted">•</span>
+                      <i class="fas fa-calendar text-muted"></i>
+                      <span class="text-muted small">{{ it.created_at or it.actualizado_en }}</span>
+                    </div>
+                    <div class="d-flex gap-2 mb-2">
+                      {% if it.is_public %}
+                        <span class="badge bg-success">
+                          <i class="fas fa-globe me-1"></i>Pública
+                        </span>
+                      {% else %}
+                        <span class="badge bg-secondary">
+                          <i class="fas fa-lock me-1"></i>Privada
+                        </span>
+                      {% endif %}
+                      
+                      {% if it.difficulty == 'facil' %}
+                        <span class="badge bg-info">
+                          <i class="fas fa-star me-1"></i>Fácil
+                        </span>
+                      {% elif it.difficulty == 'medio' %}
+                        <span class="badge bg-warning text-dark">
+                          <i class="fas fa-star me-1"></i>Medio
+                        </span>
+                      {% elif it.difficulty == 'dificil' %}
+                        <span class="badge bg-danger">
+                          <i class="fas fa-star me-1"></i>Difícil
+                        </span>
+                      {% endif %}
+                      
+                      {% if it.duration_minutes %}
+                        <span class="badge bg-dark">
+                          <i class="fas fa-clock me-1"></i>{{ it.duration_minutes }} min
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% if it.image %}
+                    <div class="ms-3">
+                      <img src="{{ url_for('static', filename='img/community/' ~ it.image) }}" 
+                           style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;" 
+                           class="rounded image-preview" 
+                           data-bs-toggle="modal" 
+                           data-bs-target="#imageModal"
+                           data-image-src="{{ url_for('static', filename='img/community/' ~ it.image) }}"
+                           data-image-title="{{ it.title or it.titulo }}"
+                           onerror="this.style.display='none'">
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                  <p class="card-text text-muted">{{ (it.summary or it.body or 'Sin descripción')[:150] }}{% if (it.summary or it.body or '')|length > 150 %}...{% endif %}</p>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                  <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#detailsModal{{ it.id }}">
+                    <i class="fas fa-eye me-1"></i>Ver detalles
+                  </button>
+                  <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ it.id }}">
+                    <i class="fas fa-trash me-1"></i>Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      {% if not items %}
+        <div class="text-center py-5">
+          <i class="fas fa-lightbulb fa-3x text-muted mb-3"></i>
+          <h4 class="text-muted">No hay recomendaciones</h4>
+          <p class="text-muted">Aún no se han creado recomendaciones en el sistema.</p>
+        </div>
+      {% endif %}
+    </div>
+    
+    <!-- Public Recommendations Tab -->
+    <div class="tab-pane fade" id="public-recommendations" role="tabpanel">
+      <div class="row g-4">
+        {% for it in items if it.is_public %}
+          <div class="col-xl-6 col-lg-12">
+            <div class="card border-0 shadow-sm h-100 border-success">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <div class="flex-grow-1">
+                    <h5 class="card-title mb-2">
+                      <i class="fas fa-globe text-success me-2"></i>{{ it.title or it.titulo }}
+                    </h5>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <i class="fas fa-user text-muted"></i>
+                      <span class="text-muted small">{{ it.created_by or 'Sistema' }}</span>
+                      <span class="text-muted">•</span>
+                      <i class="fas fa-calendar text-muted"></i>
+                      <span class="text-muted small">{{ it.created_at or it.actualizado_en }}</span>
+                    </div>
+                    <div class="d-flex gap-2 mb-2">
+                      <span class="badge bg-success">
+                        <i class="fas fa-globe me-1"></i>Pública
+                      </span>
+                      {% if it.difficulty %}
+                        <span class="badge bg-{% if it.difficulty == 'facil' %}info{% elif it.difficulty == 'medio' %}warning text-dark{% else %}danger{% endif %}">
+                          <i class="fas fa-star me-1"></i>{{ it.difficulty|title }}
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% if it.image %}
+                    <div class="ms-3">
+                      <img src="{{ url_for('static', filename='img/community/' ~ it.image) }}" 
+                           style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;" 
+                           class="rounded image-preview" 
+                           data-bs-toggle="modal" 
+                           data-bs-target="#imageModal"
+                           data-image-src="{{ url_for('static', filename='img/community/' ~ it.image) }}"
+                           data-image-title="{{ it.title or it.titulo }}"
+                           onerror="this.style.display='none'">
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                  <p class="card-text text-muted">{{ (it.summary or it.body or 'Sin descripción')[:150] }}{% if (it.summary or it.body or '')|length > 150 %}...{% endif %}</p>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                  <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#detailsModal{{ it.id }}">
+                    <i class="fas fa-eye me-1"></i>Ver detalles
+                  </button>
+                  <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ it.id }}">
+                    <i class="fas fa-trash me-1"></i>Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No hay recomendaciones públicas</h4>
+            <p class="text-muted">Todas las recomendaciones están marcadas como privadas.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    
+    <!-- Exercise Recommendations Tab -->
+    <div class="tab-pane fade" id="exercise-recommendations" role="tabpanel">
+      <div class="row g-4">
+        {% for it in items if it.tipo == 'ejercicio' %}
+          <div class="col-xl-6 col-lg-12">
+            <div class="card border-0 shadow-sm h-100 border-success">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <div class="flex-grow-1">
+                    <h5 class="card-title mb-2">
+                      <i class="fas fa-dumbbell text-success me-2"></i>{{ it.title or it.titulo }}
+                    </h5>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <i class="fas fa-user text-muted"></i>
+                      <span class="text-muted small">{{ it.created_by or 'Sistema' }}</span>
+                      <span class="text-muted">•</span>
+                      <i class="fas fa-calendar text-muted"></i>
+                      <span class="text-muted small">{{ it.created_at or it.actualizado_en }}</span>
+                    </div>
+                    <div class="d-flex gap-2 mb-2">
+                      <span class="badge bg-success">
+                        <i class="fas fa-dumbbell me-1"></i>Ejercicio
+                      </span>
+                      {% if it.difficulty %}
+                        <span class="badge bg-{% if it.difficulty == 'facil' %}info{% elif it.difficulty == 'medio' %}warning text-dark{% else %}danger{% endif %}">
+                          <i class="fas fa-star me-1"></i>{{ it.difficulty|title }}
+                        </span>
+                      {% endif %}
+                      {% if it.duration_minutes %}
+                        <span class="badge bg-dark">
+                          <i class="fas fa-clock me-1"></i>{{ it.duration_minutes }} min
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% if it.image %}
+                    <div class="ms-3">
+                      <img src="{{ url_for('static', filename='img/community/' ~ it.image) }}" 
+                           style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;" 
+                           class="rounded image-preview" 
+                           data-bs-toggle="modal" 
+                           data-bs-target="#imageModal"
+                           data-image-src="{{ url_for('static', filename='img/community/' ~ it.image) }}"
+                           data-image-title="{{ it.title or it.titulo }}"
+                           onerror="this.style.display='none'">
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                  <p class="card-text text-muted">{{ (it.summary or it.body or 'Sin descripción')[:150] }}{% if (it.summary or it.body or '')|length > 150 %}...{% endif %}</p>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                  <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#detailsModal{{ it.id }}">
+                    <i class="fas fa-eye me-1"></i>Ver detalles
+                  </button>
+                  <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ it.id }}">
+                    <i class="fas fa-trash me-1"></i>Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-dumbbell fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No hay recomendaciones de ejercicio</h4>
+            <p class="text-muted">No se han creado recomendaciones para ejercicios.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    
+    <!-- Study Recommendations Tab -->
+    <div class="tab-pane fade" id="study-recommendations" role="tabpanel">
+      <div class="row g-4">
+        {% for it in items if it.tipo == 'estudio' %}
+          <div class="col-xl-6 col-lg-12">
+            <div class="card border-0 shadow-sm h-100 border-info">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <div class="flex-grow-1">
+                    <h5 class="card-title mb-2">
+                      <i class="fas fa-book text-info me-2"></i>{{ it.title or it.titulo }}
+                    </h5>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <i class="fas fa-user text-muted"></i>
+                      <span class="text-muted small">{{ it.created_by or 'Sistema' }}</span>
+                      <span class="text-muted">•</span>
+                      <i class="fas fa-calendar text-muted"></i>
+                      <span class="text-muted small">{{ it.created_at or it.actualizado_en }}</span>
+                    </div>
+                    <div class="d-flex gap-2 mb-2">
+                      <span class="badge bg-info">
+                        <i class="fas fa-book me-1"></i>Estudio
+                      </span>
+                      {% if it.difficulty %}
+                        <span class="badge bg-{% if it.difficulty == 'facil' %}info{% elif it.difficulty == 'medio' %}warning text-dark{% else %}danger{% endif %}">
+                          <i class="fas fa-star me-1"></i>{{ it.difficulty|title }}
+                        </span>
+                      {% endif %}
+                      {% if it.duration_minutes %}
+                        <span class="badge bg-dark">
+                          <i class="fas fa-clock me-1"></i>{{ it.duration_minutes }} min
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% if it.image %}
+                    <div class="ms-3">
+                      <img src="{{ url_for('static', filename='img/community/' ~ it.image) }}" 
+                           style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;" 
+                           class="rounded image-preview" 
+                           data-bs-toggle="modal" 
+                           data-bs-target="#imageModal"
+                           data-image-src="{{ url_for('static', filename='img/community/' ~ it.image) }}"
+                           data-image-title="{{ it.title or it.titulo }}"
+                           onerror="this.style.display='none'">
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                  <p class="card-text text-muted">{{ (it.summary or it.body or 'Sin descripción')[:150] }}{% if (it.summary or it.body or '')|length > 150 %}...{% endif %}</p>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                  <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#detailsModal{{ it.id }}">
+                    <i class="fas fa-eye me-1"></i>Ver detalles
+                  </button>
+                  <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ it.id }}">
+                    <i class="fas fa-trash me-1"></i>Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-book fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No hay recomendaciones de estudio</h4>
+            <p class="text-muted">No se han creado recomendaciones para estudios.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals for each recommendation -->
+  {% for it in items %}
+    <!-- Details Modal -->
+    <div class="modal fade" id="detailsModal{{ it.id }}" tabindex="-1" aria-labelledby="detailsModalLabel{{ it.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="detailsModalLabel{{ it.id }}">
+              {% if it.tipo == 'ejercicio' %}
+                <i class="fas fa-dumbbell me-2"></i>
+              {% else %}
+                <i class="fas fa-book me-2"></i>
+              {% endif %}
+              Detalles de la Recomendación
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-8">
+                <h4 class="mb-3">{{ it.title or it.titulo }}</h4>
+                <div class="mb-3">
+                  <div class="row g-2">
+                    <div class="col-md-6">
+                      <strong>Tipo:</strong>
+                      <span class="badge bg-{% if it.tipo == 'ejercicio' %}success{% else %}info{% endif %} ms-2">
+                        {% if it.tipo == 'ejercicio' %}
+                          <i class="fas fa-dumbbell me-1"></i>Ejercicio
+                        {% else %}
+                          <i class="fas fa-book me-1"></i>Estudio
+                        {% endif %}
+                      </span>
+                    </div>
+                    <div class="col-md-6">
+                      <strong>Visibilidad:</strong>
+                      <span class="badge bg-{% if it.is_public %}success{% else %}secondary{% endif %} ms-2">
+                        {% if it.is_public %}
+                          <i class="fas fa-globe me-1"></i>Pública
+                        {% else %}
+                          <i class="fas fa-lock me-1"></i>Privada
+                        {% endif %}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {% if it.difficulty %}
+                  <div class="mb-3">
+                    <strong>Dificultad:</strong>
+                    <span class="badge bg-{% if it.difficulty == 'facil' %}info{% elif it.difficulty == 'medio' %}warning text-dark{% else %}danger{% endif %} ms-2">
+                      <i class="fas fa-star me-1"></i>{{ it.difficulty|title }}
+                    </span>
+                  </div>
+                {% endif %}
+                {% if it.duration_minutes %}
+                  <div class="mb-3">
+                    <strong>Duración:</strong>
+                    <span class="badge bg-dark ms-2">
+                      <i class="fas fa-clock me-1"></i>{{ it.duration_minutes }} minutos
+                    </span>
+                  </div>
+                {% endif %}
+                <div class="mb-3">
+                  <strong>Creado por:</strong> {{ it.created_by or 'Sistema' }}<br>
+                  <strong>Fecha:</strong> {{ it.created_at or it.actualizado_en }}
+                </div>
+                {% if it.category %}
+                  <div class="mb-3">
+                    <strong>Categoría:</strong> {{ it.category }}
+                  </div>
+                {% endif %}
+                <div class="mb-3">
+                  <strong>Descripción:</strong>
+                  <div class="mt-2 p-3 bg-light rounded">
+                    {{ it.summary or it.body or it.texto or 'Sin descripción disponible' }}
+                  </div>
+                </div>
+                {% if it.instructions %}
+                  <div class="mb-3">
+                    <strong>Instrucciones:</strong>
+                    <div class="mt-2 p-3 bg-light rounded">
+                      {{ it.instructions }}
+                    </div>
+                  </div>
+                {% endif %}
+              </div>
+              <div class="col-md-4">
+                {% if it.image %}
+                  <div class="text-center mb-3">
+                    <img src="{{ url_for('static', filename='img/community/' ~ it.image) }}" 
+                         class="img-fluid rounded" 
+                         style="max-height: 300px; cursor: pointer;"
+                         data-bs-toggle="modal" 
+                         data-bs-target="#imageModal"
+                         data-image-src="{{ url_for('static', filename='img/community/' ~ it.image) }}"
+                         data-image-title="{{ it.title or it.titulo }}"
+                         onerror="this.style.display='none'">
+                  </div>
+                {% endif %}
+                <div class="card bg-light">
+                  <div class="card-body">
+                    <h6 class="card-title">Información adicional</h6>
+                    <ul class="list-unstyled mb-0">
+                      <li><strong>ID:</strong> {{ it.id }}</li>
+                      {% if it.equipment %}
+                        <li><strong>Equipo:</strong> {{ it.equipment }}</li>
+                      {% endif %}
+                      {% if it.target_audience %}
+                        <li><strong>Audiencia:</strong> {{ it.target_audience }}</li>
+                      {% endif %}
+                      {% if it.prerequisites %}
+                        <li><strong>Requisitos:</strong> {{ it.prerequisites }}</li>
+                      {% endif %}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fas fa-times me-1"></i>Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div class="modal fade" id="deleteModal{{ it.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ it.id }}" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title" id="deleteModalLabel{{ it.id }}">
+              <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="text-center mb-3">
+              <i class="fas fa-trash fa-3x text-danger mb-3"></i>
+              <h5>¿Estás seguro de que quieres eliminar esta recomendación?</h5>
+              <p class="text-muted">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="card bg-light">
+              <div class="card-body">
+                <h6 class="fw-bold">{{ it.title or it.titulo }}</h6>
+                <p class="text-muted mb-0">{{ (it.summary or it.body or it.texto or 'Sin descripción')[:100] }}{% if (it.summary or it.body or it.texto or '')|length > 100 %}...{% endif %}</p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fas fa-times me-1"></i>Cancelar
+            </button>
+            <form method="POST" action="{{ url_for('admin.delete_recommendation', recommendation_id=it.id) }}" style="display: inline;">
+              <button type="submit" class="btn btn-danger">
+                <i class="fas fa-trash me-1"></i>Eliminar
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+
+  <!-- Image Preview Modal -->
+  <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="imageModalLabel">Vista previa de imagen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img id="modalImage" src="" alt="" class="img-fluid rounded">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Image preview functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const imageModal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+  const modalLabel = document.getElementById('imageModalLabel');
+  
+  imageModal.addEventListener('show.bs.modal', function(event) {
+    const trigger = event.relatedTarget;
+    const imageSrc = trigger.getAttribute('data-image-src');
+    const imageTitle = trigger.getAttribute('data-image-title');
+    
+    modalImage.src = imageSrc;
+    modalImage.alt = imageTitle;
+    modalLabel.textContent = imageTitle || 'Vista previa de imagen';
+  });
+  
+  // Auto refresh every 30 seconds
+  setInterval(function() {
+    location.reload();
+  }, 30000);
+});
+
+// Confirmation for delete actions
+document.addEventListener('DOMContentLoaded', function() {
+  const deleteButtons = document.querySelectorAll('[data-bs-target*="deleteModal"]');
+  deleteButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      // Add animation or any other effects here if needed
+    });
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,469 @@
+{% extends 'admin/admin_layout.html' %}
+{% block title %}Comunidad{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <!-- Header Section -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="h3 mb-0">
+        <i class="fas fa-users text-primary me-2"></i>Administración de Comunidad
+      </h2>
+      <p class="text-muted mb-0">Gestiona las publicaciones de la comunidad. Puedes aprobar o eliminar publicaciones que no cumplan con las normas.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <span class="badge bg-success fs-6">{{ posts|selectattr("approved", "equalto", 1)|list|length }} Aprobadas</span>
+      <span class="badge bg-warning fs-6">{{ posts|selectattr("approved", "equalto", 0)|list|length }} Pendientes</span>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <div class="h4 text-success mb-1">{{ posts|selectattr("approved", "equalto", 1)|list|length }}</div>
+          <small class="text-muted">Publicaciones Aprobadas</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <div class="h4 text-warning mb-1">{{ posts|selectattr("approved", "equalto", 0)|list|length }}</div>
+          <small class="text-muted">Pendientes de Aprobación</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <div class="h4 text-primary mb-1">{{ posts|length }}</div>
+          <small class="text-muted">Total de Publicaciones</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center">
+          <div class="h4 text-info mb-1">{{ posts|selectattr("image")|list|length }}</div>
+          <small class="text-muted">Con Imágenes</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Tabs -->
+  <ul class="nav nav-pills mb-4" id="filterTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="all-tab" data-bs-toggle="pill" data-bs-target="#all-posts" type="button" role="tab">
+        <i class="fas fa-list me-2"></i>Todas ({{ posts|length }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="pending-tab" data-bs-toggle="pill" data-bs-target="#pending-posts" type="button" role="tab">
+        <i class="fas fa-clock me-2"></i>Pendientes ({{ posts|selectattr("approved", "equalto", 0)|list|length }})
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="approved-tab" data-bs-toggle="pill" data-bs-target="#approved-posts" type="button" role="tab">
+        <i class="fas fa-check-circle me-2"></i>Aprobadas ({{ posts|selectattr("approved", "equalto", 1)|list|length }})
+      </button>
+    </li>
+  </ul>
+
+  <!-- Posts Content -->
+  <div class="tab-content" id="filterTabsContent">
+    <!-- All Posts Tab -->
+    <div class="tab-pane fade show active" id="all-posts" role="tabpanel">
+      <div class="row g-4">
+        {% for p in posts %}
+          <div class="col-xl-6 col-lg-12">
+            <div class="card border-0 shadow-sm h-100 {% if p.approved == 0 %}border-warning{% endif %}">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <div class="flex-grow-1">
+                    <h5 class="card-title mb-2">
+                      <i class="fas fa-file-text text-muted me-2"></i>{{ p.title or p.titulo }}
+                    </h5>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <i class="fas fa-user text-muted"></i>
+                      <span class="text-muted small">{{ p.user_name or p.actualizado_por }}</span>
+                      <span class="text-muted">•</span>
+                      <i class="fas fa-calendar text-muted"></i>
+                      <span class="text-muted small">{{ p.created_at or p.actualizado_en }}</span>
+                    </div>
+                    {% if p.approved == 0 %}
+                      <span class="badge bg-warning text-dark">
+                        <i class="fas fa-clock me-1"></i>Pendiente de aprobación
+                      </span>
+                    {% else %}
+                      <span class="badge bg-success">
+                        <i class="fas fa-check-circle me-1"></i>Aprobada
+                      </span>
+                    {% endif %}
+                  </div>
+                  {% if p.image %}
+                    <div class="ms-3">
+                      <img src="{{ url_for('static', filename='img/community/' ~ p.image) }}" 
+                           style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;" 
+                           class="rounded image-preview" 
+                           data-bs-toggle="modal" 
+                           data-bs-target="#imageModal"
+                           data-image-src="{{ url_for('static', filename='img/community/' ~ p.image) }}"
+                           data-image-title="{{ p.title or p.titulo }}"
+                           onerror="this.style.display='none'">
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                  <p class="card-text text-muted">{{ (p.summary or p.texto or p.body or 'Sin descripción')[:150] }}{% if (p.summary or p.texto or p.body or '')|length > 150 %}...{% endif %}</p>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="btn-group" role="group">
+                    <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#detailsModal{{ p.id }}">
+                      <i class="fas fa-eye me-1"></i>Ver detalles
+                    </button>
+                    {% if p.approved == 0 %}
+                      <form action="{{ url_for('admin.admin_approve_post', post_id=p.id) }}" method="post" style="display:inline-block;">
+                        <button class="btn btn-success btn-sm">
+                          <i class="fas fa-check me-1"></i>Aprobar
+                        </button>
+                      </form>
+                    {% endif %}
+                  </div>
+                  <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ p.id }}">
+                    <i class="fas fa-trash me-1"></i>Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        {% endfor %}
+      </div>
+      {% if not posts %}
+        <div class="text-center py-5">
+          <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+          <h4 class="text-muted">No hay publicaciones</h4>
+          <p class="text-muted">Aún no se han creado publicaciones en la comunidad.</p>
+        </div>
+      {% endif %}
+    </div>
+    
+    <!-- Pending Posts Tab -->
+    <div class="tab-pane fade" id="pending-posts" role="tabpanel">
+      <div class="row g-4">
+        {% for p in posts if p.approved == 0 %}
+          <div class="col-xl-6 col-lg-12">
+            <div class="card border-0 shadow-sm h-100 border-warning">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <div class="flex-grow-1">
+                    <h5 class="card-title mb-2">
+                      <i class="fas fa-clock text-warning me-2"></i>{{ p.title or p.titulo }}
+                    </h5>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <i class="fas fa-user text-muted"></i>
+                      <span class="text-muted small">{{ p.user_name or p.actualizado_por }}</span>
+                      <span class="text-muted">•</span>
+                      <i class="fas fa-calendar text-muted"></i>
+                      <span class="text-muted small">{{ p.created_at or p.actualizado_en }}</span>
+                    </div>
+                    <span class="badge bg-warning text-dark">
+                      <i class="fas fa-clock me-1"></i>Pendiente de aprobación
+                    </span>
+                  </div>
+                  {% if p.image %}
+                    <div class="ms-3">
+                      <img src="{{ url_for('static', filename='img/community/' ~ p.image) }}" 
+                           style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;" 
+                           class="rounded image-preview" 
+                           data-bs-toggle="modal" 
+                           data-bs-target="#imageModal"
+                           data-image-src="{{ url_for('static', filename='img/community/' ~ p.image) }}"
+                           data-image-title="{{ p.title or p.titulo }}"
+                           onerror="this.style.display='none'">
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                  <p class="card-text text-muted">{{ (p.summary or p.texto or p.body or 'Sin descripción')[:150] }}{% if (p.summary or p.texto or p.body or '')|length > 150 %}...{% endif %}</p>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="btn-group" role="group">
+                    <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#detailsModal{{ p.id }}">
+                      <i class="fas fa-eye me-1"></i>Ver detalles
+                    </button>
+                    <form action="{{ url_for('admin.admin_approve_post', post_id=p.id) }}" method="post" style="display:inline-block;">
+                      <button class="btn btn-success btn-sm">
+                        <i class="fas fa-check me-1"></i>Aprobar
+                      </button>
+                    </form>
+                  </div>
+                  <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ p.id }}">
+                    <i class="fas fa-trash me-1"></i>Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+            <h4 class="text-muted">¡Todas las publicaciones están aprobadas!</h4>
+            <p class="text-muted">No hay publicaciones pendientes de revisión.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    
+    <!-- Approved Posts Tab -->
+    <div class="tab-pane fade" id="approved-posts" role="tabpanel">
+      <div class="row g-4">
+        {% for p in posts if p.approved == 1 %}
+          <div class="col-xl-6 col-lg-12">
+            <div class="card border-0 shadow-sm h-100 border-success">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                  <div class="flex-grow-1">
+                    <h5 class="card-title mb-2">
+                      <i class="fas fa-check-circle text-success me-2"></i>{{ p.title or p.titulo }}
+                    </h5>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                      <i class="fas fa-user text-muted"></i>
+                      <span class="text-muted small">{{ p.user_name or p.actualizado_por }}</span>
+                      <span class="text-muted">•</span>
+                      <i class="fas fa-calendar text-muted"></i>
+                      <span class="text-muted small">{{ p.created_at or p.actualizado_en }}</span>
+                    </div>
+                    <span class="badge bg-success">
+                      <i class="fas fa-check-circle me-1"></i>Aprobada
+                    </span>
+                  </div>
+                  {% if p.image %}
+                    <div class="ms-3">
+                      <img src="{{ url_for('static', filename='img/community/' ~ p.image) }}" 
+                           style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;" 
+                           class="rounded image-preview" 
+                           data-bs-toggle="modal" 
+                           data-bs-target="#imageModal"
+                           data-image-src="{{ url_for('static', filename='img/community/' ~ p.image) }}"
+                           data-image-title="{{ p.title or p.titulo }}"
+                           onerror="this.style.display='none'">
+                    </div>
+                  {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                  <p class="card-text text-muted">{{ (p.summary or p.texto or p.body or 'Sin descripción')[:150] }}{% if (p.summary or p.texto or p.body or '')|length > 150 %}...{% endif %}</p>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                  <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#detailsModal{{ p.id }}">
+                    <i class="fas fa-eye me-1"></i>Ver detalles
+                  </button>
+                  <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ p.id }}">
+                    <i class="fas fa-trash me-1"></i>Eliminar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-clock fa-3x text-warning mb-3"></i>
+            <h4 class="text-muted">No hay publicaciones aprobadas</h4>
+            <p class="text-muted">Aún no se han aprobado publicaciones.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals for each post -->
+  {% for p in posts %}
+      <div class="modal fade" id="detailsModal{{ p.id }}" tabindex="-1" aria-labelledby="detailsModalLabel{{ p.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="detailsModalLabel{{ p.id }}">Detalles de Publicación</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-md-8">
+                  <h6 class="fw-bold text-primary">Título</h6>
+                  <p>{{ p.title or p.titulo }}</p>
+                  
+                  <h6 class="fw-bold text-primary">Estado</h6>
+                  {% if p.approved == 0 %}
+                    <span class="badge bg-warning">Pendiente de aprobación</span>
+                  {% else %}
+                    <span class="badge bg-success">Aprobada</span>
+                  {% endif %}
+                  
+                  <h6 class="fw-bold text-primary mt-3">Descripción/Resumen</h6>
+                  <div class="bg-dark p-3 rounded" style="max-height: 200px; overflow-y: auto;">
+                    <pre class="text-light mb-0">{{ p.summary or p.texto or p.body or 'Sin descripción' }}</pre>
+                  </div>
+                  
+                  <div class="row mt-3">
+                    <div class="col-md-6">
+                      <h6 class="fw-bold text-primary">Autor</h6>
+                      <p>{{ p.user_name or p.actualizado_por or 'Usuario desconocido' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                      <h6 class="fw-bold text-primary">Fecha de creación</h6>
+                      <p>{{ p.created_at or p.actualizado_en }}</p>
+                    </div>
+                  </div>
+                  
+                  {% if p.rutina_id %}
+                    <h6 class="fw-bold text-primary">Rutina asociada</h6>
+                    <p>ID de rutina: {{ p.rutina_id }}</p>
+                  {% endif %}
+                  
+                  {% if p.is_recommendation %}
+                    <h6 class="fw-bold text-primary">Tipo</h6>
+                    <span class="badge bg-info">Recomendación</span>
+                  {% endif %}
+                </div>
+                <div class="col-md-4">
+                  {% if p.image %}
+                    <h6 class="fw-bold text-primary">Imagen</h6>
+                    <img src="{{ url_for('static', filename='img/community/' ~ p.image) }}" 
+                         style="width: 100%; max-height: 200px; object-fit: cover; cursor: pointer;" 
+                         class="rounded mb-3" 
+                         data-bs-toggle="modal" 
+                         data-bs-target="#imageModal"
+                         data-image-src="{{ url_for('static', filename='img/community/' ~ p.image) }}"
+                         data-image-title="{{ p.title or p.titulo }}"
+                         onerror="this.parentElement.innerHTML='<div class=&quot;bg-secondary text-light d-flex align-items-center justify-content-center rounded&quot; style=&quot;height:200px;&quot;>Imagen no encontrada</div>'">
+                    <small class="text-muted">Clic para ver en tamaño completo</small>
+                  {% else %}
+                    <div class="bg-secondary text-light d-flex align-items-center justify-content-center rounded" style="height: 200px;">
+                      Sin imagen
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+              {% if p.approved == 0 %}
+                <form action="{{ url_for('admin.admin_approve_post', post_id=p.id) }}" method="post" style="display:inline;">
+                  <button class="btn btn-success">Aprobar Publicación</button>
+                </form>
+              {% endif %}
+              <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ p.id }}" data-bs-dismiss="modal">
+                Eliminar Publicación
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal para confirmar eliminación -->
+      <div class="modal fade" id="deleteModal{{ p.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ p.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="deleteModalLabel{{ p.id }}">Eliminar Publicación</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('admin.admin_delete_post', post_id=p.id) }}" method="post">
+              <div class="modal-body">
+                <p>¿Estás seguro de que quieres eliminar la publicación "<strong>{{ p.title or p.titulo }}</strong>" de {{ p.user_name }}?</p>
+                <div class="mb-3">
+                  <label for="motivo{{ p.id }}" class="form-label">Motivo de eliminación:</label>
+                  <select class="form-select" name="motivo" id="motivo{{ p.id }}" required>
+                    <option value="">Selecciona un motivo</option>
+                    <option value="Contenido inapropiado">Contenido inapropiado</option>
+                    <option value="Spam o publicidad">Spam o publicidad</option>
+                    <option value="Información falsa o engañosa">Información falsa o engañosa</option>
+                    <option value="Violación de derechos de autor">Violación de derechos de autor</option>
+                    <option value="Lenguaje ofensivo">Lenguaje ofensivo</option>
+                    <option value="Fuera de tema">Fuera de tema</option>
+                    <option value="Duplicado">Contenido duplicado</option>
+                    <option value="Otro">Otro motivo</option>
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-danger">Eliminar Publicación</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="list-group-item">No hay publicaciones</div>
+    {% endfor %}
+  </div>
+
+  <!-- Modal para vista completa de imagen -->
+  <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="imageModalLabel">Vista de imagen</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img id="modalImage" src="" alt="Imagen completa" style="max-width: 100%; max-height: 70vh; object-fit: contain;" class="rounded">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <a id="downloadImageBtn" href="" download class="btn btn-primary">Descargar imagen</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Script para manejar el modal de imagen
+    document.addEventListener('DOMContentLoaded', function() {
+      const imageModal = document.getElementById('imageModal');
+      const modalImage = document.getElementById('modalImage');
+      const modalTitle = document.getElementById('imageModalLabel');
+      const downloadBtn = document.getElementById('downloadImageBtn');
+      
+      if (imageModal) {
+        imageModal.addEventListener('show.bs.modal', function (event) {
+          const button = event.relatedTarget;
+          const imageSrc = button.getAttribute('data-image-src');
+          const imageTitle = button.getAttribute('data-image-title') || 'Imagen';
+          
+          modalImage.src = imageSrc;
+          modalTitle.textContent = 'Vista de imagen - ' + imageTitle;
+          downloadBtn.href = imageSrc;
+          downloadBtn.download = imageTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.jpg';
+        });
+      }
+
+      // Auto-refresh cada 30 segundos para publicaciones pendientes
+      if (document.querySelector('.badge.bg-warning')) {
+        setInterval(function() {
+          if (document.querySelector('#pending-tab.active')) {
+            location.reload();
+          }
+        }, 30000);
+      }
+
+      // Confirmación adicional para acciones críticas
+      document.querySelectorAll('form[action*="approve"]').forEach(form => {
+        form.addEventListener('submit', function(e) {
+          if (!confirm('¿Estás seguro de que quieres aprobar esta publicación?')) {
+            e.preventDefault();
+          }
+        });
+      });
+    });
+  </script>
+</div>
+{% endblock %}

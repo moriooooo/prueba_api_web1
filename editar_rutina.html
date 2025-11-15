@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Rutina - FocusFit{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/crear_rutina.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header moderno -->
+    <div class="text-center mb-5">
+        <h2 class="section-header fs-3 fw-bold mb-2">Editar rutina</h2>
+        <p class="text-muted fs-6">Modifica tu rutina para ajustarla a tus necesidades</p>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-warning text-dark" style="padding: 1.5rem;">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-dark bg-opacity-20 rounded-circle p-2 me-3">
+                            <i class="fas fa-edit text-dark"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0 fw-semibold">{{ rutina.nombre }}</h5>
+                            <small class="text-dark-50">Modifica los campos que necesites actualizar</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+<form method="post" id="formRutina">
+
+    <!-- Información básica -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h6 class="text-primary fw-semibold mb-3">
+                <i class="fas fa-info-circle me-2"></i>Información básica
+            </h6>
+        </div>
+    </div>
+
+    <!-- Nombre -->
+    <div class="mb-4">
+        <label for="nombre" class="form-label fw-semibold">Nombre de la rutina</label>
+        <input type="text" class="form-control form-control-lg" id="nombre" name="nombre" value="{{ rutina.nombre }}"
+               placeholder="Ej: Entrenamiento matutino, Estudio de matemáticas...">
+        <div class="text-danger small error-msg mt-1" id="nombreError">Este campo es obligatorio</div>
+    </div>
+
+    <!-- Tipo de rutina -->
+    <div class="mb-4">
+        <label for="tipo" class="form-label fw-semibold">Tipo de rutina</label>
+        <select class="form-select form-select-lg" id="tipo" name="tipo">
+            <option value="">-- Selecciona el tipo --</option>
+            <option value="estudio" {% if rutina.tipo == 'estudio' %}selected{% endif %}>📚 Estudio</option>
+            <option value="ejercicio" {% if rutina.tipo == 'ejercicio' %}selected{% endif %}>💪 Ejercicio</option>
+        </select>
+        <div class="text-danger small error-msg mt-1" id="tipoError">Selecciona primero un tipo de rutina</div>
+    </div>
+
+    <!-- Configuración de tiempo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h6 class="text-primary fw-semibold mb-3">
+                <i class="fas fa-clock me-2"></i>Configuración de tiempo
+            </h6>
+        </div>
+    </div>
+
+    <!-- Duración -->
+    <div class="mb-4">
+        <label class="form-label fw-semibold">Duración total</label>
+        <div class="row g-3">
+            <div class="col-6">
+                <div class="input-group">
+                    <input type="number" min="0" class="form-control form-control-lg" 
+                           id="duracionHoras" name="duracion_horas" value="{{ rutina.duracion_horas }}" placeholder="0">
+                    <span class="input-group-text">horas</span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="input-group">
+                    <input type="number" min="0" max="59" class="form-control form-control-lg" 
+                           id="duracionMinutos" name="duracion_minutos" value="{{ rutina.duracion_minutos }}" placeholder="0">
+                    <span class="input-group-text">minutos</span>
+                </div>
+            </div>
+        </div>
+        <div class="text-danger small error-msg mt-1" id="duracionError">Debes especificar la duración</div>
+    </div>
+
+    <!-- Horario -->
+    <div class="mb-4">
+        <label for="horario" class="form-label fw-semibold">Horario preferido</label>
+        <input type="time" class="form-control form-control-lg" id="horario" name="horario" value="{{ rutina.horario }}">
+        <div class="form-text">Selecciona la hora en que prefieres realizar esta rutina</div>
+        <div class="text-danger small error-msg mt-1" id="horarioError">Selecciona un horario</div>
+    </div>
+
+    <!-- Programación de días -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h6 class="text-primary fw-semibold mb-3">
+                <i class="fas fa-calendar-alt me-2"></i>Programación
+            </h6>
+        </div>
+    </div>
+
+    <!-- Días tipo calendario -->
+    <div class="mb-4">
+        <label class="form-label fw-semibold">Días de la semana</label>
+        <div class="dias-calendario mt-3">
+            {% set dias_rutina = rutina.dias.split(',') if rutina.dias else [] %}
+            {% for dia in ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'] %}
+            <div class="dia {% if dia in dias_rutina %}seleccionado{% endif %}" data-dia="{{ dia }}">
+                <span>{{ dia[:3] }}</span>
+                <small class="d-block">{{ dia[3:] }}</small>
+            </div>
+            {% endfor %}
+        </div>
+        <input type="hidden" name="diasSeleccionados" id="diasSeleccionados" value="{{ rutina.dias }}">
+        <div class="form-text">Selecciona los días en que realizarás esta rutina</div>
+        <div class="text-danger small error-msg mt-1" id="diasError">Selecciona al menos un día</div>
+    </div>
+
+    <!-- Contenido de la rutina -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h6 class="text-primary fw-semibold mb-3">
+                <i class="fas fa-list me-2"></i>Contenido de la rutina
+            </h6>
+        </div>
+    </div>
+
+    <!-- Items dinámicos -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <label class="form-label fw-semibold mb-0">Actividades</label>
+            <button type="button" class="btn btn-outline-primary" id="agregarItemBtn">
+                <i class="fas fa-plus me-2"></i>Agregar actividad
+            </button>
+        </div>
+        <div id="itemsContainer" class="mb-3">
+            {% for item in items %}
+            <div class="card border-0 shadow-sm mb-3 item-existente" data-item-id="{{ item.id }}">
+                <div class="card-header bg-{% if rutina.tipo == 'ejercicio' %}success{% else %}primary{% endif %} text-white d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="{% if rutina.tipo == 'ejercicio' %}fas fa-dumbbell{% else %}fas fa-book{% endif %} me-2"></i>
+                        <span class="fw-semibold">{% if rutina.tipo == 'ejercicio' %}Ejercicio{% else %}Materia de estudio{% endif %}</span>
+                    </div>
+                    <button type="button" class="btn btn-outline-light btn-sm eliminarItemBtn">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Nombre</label>
+                        <input type="text" class="form-control" name="item_nombre[]" value="{{ item.nombre }}" 
+                               placeholder="Nombre del {% if rutina.tipo == 'ejercicio' %}ejercicio{% else %}tema de estudio{% endif %}" required>
+                    </div>
+                    {% if rutina.tipo == 'ejercicio' %}
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Series</label>
+                            <input type="number" class="form-control" name="item_series[]" value="{{ item.series }}" 
+                                   placeholder="0" min="1" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Repeticiones</label>
+                            <input type="number" class="form-control" name="item_repeticiones[]" value="{{ item.repeticiones }}" 
+                                   placeholder="0" min="1" required>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="row g-3">
+                        <div class="col col-tiempo" style="display:none;">
+                            <label class="form-label fw-semibold">Tiempo (min)</label>
+                            <input type="number" class="form-control item-tiempo" name="item_tiempo[]" value="{{ item.tiempo_estimado }}" min="0" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Prioridad</label>
+                            <select class="form-select" name="item_prioridad[]" required>
+                                <option value="">-- Selecciona la prioridad --</option>
+                                <option value="alta" {% if item.prioridad == 'alta' %}selected{% endif %}>🔴 Alta</option>
+                                <option value="media" {% if item.prioridad == 'media' %}selected{% endif %}>🟡 Media</option>
+                                <option value="baja" {% if item.prioridad == 'baja' %}selected{% endif %}>🟢 Baja</option>
+                            </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <input type="hidden" name="item_id[]" value="{{ item.id }}">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-danger small error-msg" id="itemsError">Agrega al menos una actividad</div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="d-flex justify-content-between align-items-center pt-4 border-top">
+        <a href="{{ url_for('eliminar_rutina', id_rutina=rutina.id_rutina) }}" class="btn btn-danger btn-lg" 
+           onclick="return confirm('¿Seguro que deseas eliminar esta rutina?');">
+            <i class="fas fa-trash me-2"></i>Eliminar rutina
+        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('mis_rutinas') }}" class="btn btn-outline-secondary btn-lg">
+                <i class="fas fa-arrow-left me-2"></i>Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary btn-lg px-4">
+                <i class="fas fa-save me-2"></i>Guardar cambios
+            </button>
+        </div>
+    </div>
+</form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const form = document.getElementById('formRutina');
+const tipoSelect = document.getElementById('tipo');
+const tipoError = document.getElementById('tipoError');
+const nombre = document.getElementById('nombre');
+const nombreError = document.getElementById('nombreError');
+const duracionHoras = document.getElementById('duracionHoras');
+const duracionMinutos = document.getElementById('duracionMinutos');
+const duracionError = document.getElementById('duracionError');
+const horario = document.getElementById('horario');
+const horarioError = document.getElementById('horarioError');
+const dias = document.querySelectorAll('.dia');
+const diasSeleccionadosInput = document.getElementById('diasSeleccionados');
+const diasError = document.getElementById('diasError');
+const itemsContainer = document.getElementById('itemsContainer');
+const itemsError = document.getElementById('itemsError');
+
+// Ocultar errores inicialmente
+[nombreError, tipoError, duracionError, horarioError, diasError, itemsError].forEach(e => e.style.display = 'none');
+
+// Calendario de días
+dias.forEach(dia => {
+    dia.addEventListener('click', () => {
+        dia.classList.toggle('seleccionado');
+        actualizarDiasSeleccionados();
+    });
+});
+
+function actualizarDiasSeleccionados() {
+    const seleccionados = Array.from(dias)
+        .filter(d => d.classList.contains('seleccionado'))
+        .map(d => d.dataset.dia);
+    diasSeleccionadosInput.value = seleccionados.join(',');
+}
+
+// Calcular duración total en minutos
+function duracionTotalMinutos() {
+    const h = parseInt(duracionHoras.value) || 0;
+    const m = parseInt(duracionMinutos.value) || 0;
+    return h*60 + m;
+}
+
+// Distribuir automáticamente el tiempo entre items de estudio
+function distribuirTiempoItems() {
+    const tipo = tipoSelect.value;
+    if(tipo !== 'estudio') return;
+
+    const totalMin = duracionTotalMinutos();
+    const items = Array.from(itemsContainer.children);
+
+    if(items.length === 0) return;
+
+    // Si hay un solo item, ocupa todo el tiempo
+    if(items.length === 1) {
+        const tiempoInput = items[0].querySelector('.item-tiempo');
+        if(tiempoInput){
+            tiempoInput.value = totalMin;
+            tiempoInput.parentElement.style.display = 'none';
+        }
+        return;
+    }
+
+    // Si hay más de un item
+    let manualSum = 0;
+    let autoItems = [];
+    items.forEach(item => {
+        let input = item.querySelector('.item-tiempo');
+        if(!input){
+            // crear input si no existe
+            const col = item.querySelector('.col-tiempo');
+            col.style.display = 'block';
+            col.innerHTML = `<label>Tiempo (min)</label>
+                             <input type="number" class="form-control item-tiempo" name="item_tiempo[]" value="0" min="0" required>`;
+            input = col.querySelector('input');
+        }
+        if(input.dataset.manual === 'true') {
+            manualSum += parseInt(input.value) || 0;
+        } else {
+            autoItems.push(input);
+        }
+    });
+
+    // Distribuir tiempo restante
+    let restante = totalMin - manualSum;
+    if(restante < 0){
+        // Ajustar proporcionalmente los manuales si exceden
+        alert('Los tiempos asignados exceden la duración total de la rutina. Se ajustarán automáticamente.');
+        items.forEach(item => {
+            const input = item.querySelector('.item-tiempo');
+            input.value = Math.floor(totalMin / items.length);
+            input.dataset.manual = 'false';
+        });
+        return;
+    }
+
+    const porItem = Math.floor(restante / autoItems.length);
+    autoItems.forEach(input => input.value = porItem);
+}
+
+// Crear item dinámico mejorado
+function crearItem(tipo){
+    const container = document.createElement('div');
+    container.classList.add('card','border-0','shadow-sm','mb-3');
+
+    const tipoIcon = tipo === 'ejercicio' ? 'fas fa-dumbbell' : 'fas fa-book';
+    const tipoColor = tipo === 'ejercicio' ? 'success' : 'primary';
+    const tipoTexto = tipo === 'ejercicio' ? 'Ejercicio' : 'Materia de estudio';
+
+    let html = `
+        <div class="card-header bg-${tipoColor} text-white d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <i class="${tipoIcon} me-2"></i>
+                <span class="fw-semibold">${tipoTexto}</span>
+            </div>
+            <button type="button" class="btn btn-outline-light btn-sm eliminarItemBtn">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Nombre</label>
+                <input type="text" class="form-control" name="item_nombre[]" 
+                       placeholder="Nombre del ${tipo === 'ejercicio' ? 'ejercicio' : 'tema de estudio'}" required>
+            </div>`;
+
+    if(tipo === 'ejercicio'){
+        html += `
+            <div class="row g-3">
+                <div class="col-6">
+                    <label class="form-label fw-semibold">Series</label>
+                    <input type="number" class="form-control" name="item_series[]" 
+                           placeholder="0" min="1" required>
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-semibold">Repeticiones</label>
+                    <input type="number" class="form-control" name="item_repeticiones[]" 
+                           placeholder="0" min="1" required>
+                </div>
+            </div>`;
+    } else {
+        html += `
+            <div class="row g-3">
+                <div class="col col-tiempo" style="display:none;"></div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Prioridad</label>
+                    <select class="form-select" name="item_prioridad[]" required>
+                        <option value="">-- Selecciona la prioridad --</option>
+                        <option value="alta">🔴 Alta</option>
+                        <option value="media">🟡 Media</option>
+                        <option value="baja">🟢 Baja</option>
+                    </select>
+                </div>
+            </div>`;
+    }
+
+    html += `
+            <input type="hidden" name="item_id[]" value="">
+        </div>`;
+    container.innerHTML = html;
+
+    container.querySelector('.eliminarItemBtn').addEventListener('click', () => {
+        container.remove();
+        distribuirTiempoItems();
+    });
+
+    return container;
+}
+
+// Marcar inputs de tiempo como manual si el usuario cambia el valor
+itemsContainer.addEventListener('input', e => {
+    if(e.target.classList.contains('item-tiempo')){
+        e.target.dataset.manual = 'true';
+        distribuirTiempoItems();
+    }
+});
+
+// Agregar listeners a botones de eliminar existentes
+document.querySelectorAll('.eliminarItemBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if(confirm('¿Estás seguro de eliminar este item?')) {
+            btn.closest('.item-existente').remove();
+            distribuirTiempoItems();
+        }
+    });
+});
+
+// Cambiar tipo de rutina limpia items existentes nuevos (no los ya guardados)
+tipoSelect.addEventListener('change', () => {
+    // Solo eliminar items nuevos (que no tienen data-item-id)
+    const itemsNuevos = itemsContainer.querySelectorAll('.card:not([data-item-id])');
+    itemsNuevos.forEach(item => item.remove());
+});
+
+// Botón agregar item
+document.getElementById('agregarItemBtn').addEventListener('click', () => {
+    const tipo = tipoSelect.value;
+    if(!tipo){
+        tipoError.style.display = 'block';
+        return;
+    }
+    tipoError.style.display = 'none';
+    const item = crearItem(tipo);
+    itemsContainer.appendChild(item);
+    distribuirTiempoItems();
+});
+
+// Actualizar tiempo cuando cambian horas o minutos de la rutina
+[duracionHoras, duracionMinutos].forEach(input => {
+    input.addEventListener('input', distribuirTiempoItems);
+});
+
+// Validación de formulario
+form.addEventListener('submit', function(e){
+    let valido = true;
+
+    // Nombre
+    if(nombre.value.trim() === ''){
+        nombreError.style.display = 'block';
+        valido = false;
+    } else nombreError.style.display = 'none';
+
+    // Tipo
+    if(tipoSelect.value === ''){
+        tipoError.style.display = 'block';
+        valido = false;
+    } else tipoError.style.display = 'none';
+
+    // Duración
+    if(duracionTotalMinutos() === 0){
+        duracionError.style.display = 'block';
+        valido = false;
+    } else duracionError.style.display = 'none';
+
+    // Horario
+    if(horario.value === ''){
+        horarioError.style.display = 'block';
+        valido = false;
+    } else horarioError.style.display = 'none';
+
+    // Días
+    actualizarDiasSeleccionados();
+    if(diasSeleccionadosInput.value === ''){
+        diasError.style.display = 'block';
+        valido = false;
+    } else diasError.style.display = 'none';
+
+    // Items
+    if(itemsContainer.children.length === 0){
+        itemsError.style.display = 'block';
+        valido = false
+    } else {
+        const inputs = itemsContainer.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            if(input.required && input.value.trim() === ''){
+                input.classList.add('is-invalid');
+                valido = false;
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+        itemsError.style.display = 'none';
+    }
+
+    if(!valido) e.preventDefault();
+});
+
+// Inicializar tiempo distribuido al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+    distribuirTiempoItems();
+});
+</script>
+
+{% endblock %}

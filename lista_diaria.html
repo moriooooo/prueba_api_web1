@@ -1,0 +1,202 @@
+<!-- templates/lista_diaria.html -->
+{% extends "base.html" %}
+
+{% block title %}Lista diaria - FocusFit{% endblock %}
+
+{% block extra_head %}
+<style>
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+  }
+  
+  .btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .list-group-item {
+    border-color: rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+  }
+  
+  .list-group-item:hover {
+    background-color: rgba(0,0,0,0.02);
+  }
+  
+  .section-header {
+    background: linear-gradient(135deg, #295bbe 0%, #4a90e2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .badge {
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+  }
+  
+  .activity-card {
+    border: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .activity-item {
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+  }
+  
+  .activity-item:hover {
+    background-color: rgba(0,0,0,0.02);
+    border-color: rgba(0,0,0,0.12);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h2 class="section-header fs-3 fw-bold mb-2">Lista diaria</h2>
+    <p class="text-muted fs-6 mb-1">{{ dia_actual }}</p>
+    <small class="text-muted">Completa tus actividades programadas para hoy</small>
+</div>
+
+    {% set ejercicios = rutinas | selectattr('tipo', 'equalto', 'ejercicio') | list %}
+    {% set estudios = rutinas | selectattr('tipo', 'equalto', 'estudio') | list %}
+
+    <!-- Sección de Ejercicios -->
+    {% if ejercicios %}
+        <div class="mb-5">
+            <div class="d-flex align-items-center mb-4">
+                <div class="bg-success rounded-circle p-2 me-3">
+                    <i class="fas fa-dumbbell text-white"></i>
+                </div>
+                <h4 class="mb-0 fw-semibold text-dark">Ejercicio</h4>
+                <span class="badge bg-success ms-3">{{ ejercicios|length }} rutina{{ 's' if ejercicios|length != 1 else '' }}</span>
+            </div>
+            
+            <div class="row g-4">
+                {% for r in ejercicios %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card activity-card border-0 shadow-sm h-100">
+                            <div class="card-header text-white border-0 bg-success" style="padding: 1rem;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0 fw-semibold">{{ r['nombre'] }}</h6>
+                                    {% if r['horario'] %}
+                                        <span class="badge bg-light text-success">{{ r['horario'] }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                {% for item in r['items'] %}
+                                    <div class="activity-item p-3 m-3 {% if item['completado'] %}bg-light{% endif %}">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-2 fw-semibold text-dark">{{ item['nombre_item'] }}</h6>
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    {% if item['series'] %}
+                                                        <span class="badge bg-light text-dark border">{{ item['series'] }} series</span>
+                                                    {% endif %}
+                                                    {% if item['repeticiones'] %}
+                                                        <span class="badge bg-light text-dark border">{{ item['repeticiones'] }} rep</span>
+                                                    {% endif %}
+                                                    {% if item['tiempo'] %}
+                                                        <span class="badge bg-light text-dark border">{{ item['tiempo'] }} min</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <button type="button" 
+                                                    class="btn btn-sm {{ 'btn-success' if item['completado'] else 'btn-outline-success' }} btn-marcar ms-2"
+                                                    data-id="{{ item['id'] }}"
+                                                    data-completado="{{ 'true' if item['completado'] else 'false' }}">
+                                                {% if item['completado'] %}
+                                                    <i class="fas fa-check me-1"></i>Completado
+                                                {% else %}
+                                                    Marcar
+                                                {% endif %}
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Sección de Estudio -->
+    {% if estudios %}
+        <div class="mb-5">
+            <div class="d-flex align-items-center mb-4">
+                <div class="bg-primary rounded-circle p-2 me-3">
+                    <i class="fas fa-book text-white"></i>
+                </div>
+                <h4 class="mb-0 fw-semibold text-dark">Estudio</h4>
+                <span class="badge bg-primary ms-3">{{ estudios|length }} rutina{{ 's' if estudios|length != 1 else '' }}</span>
+            </div>
+            
+            <div class="row g-4">
+                {% for r in estudios %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card activity-card border-0 shadow-sm h-100">
+                            <div class="card-header text-white border-0 bg-primary" style="padding: 1rem;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0 fw-semibold">{{ r['nombre'] }}</h6>
+                                    {% if r['horario'] %}
+                                        <span class="badge bg-light text-primary">{{ r['horario'] }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                {% for item in r['items'] %}
+                                    <div class="activity-item p-3 m-3 {% if item['completado'] %}bg-light{% endif %}">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-2 fw-semibold text-dark">{{ item['nombre_item'] }}</h6>
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    {% if item['tiempo'] %}
+                                                        <span class="badge bg-light text-dark border">{{ item['tiempo'] }} min</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <button type="button" 
+                                                    class="btn btn-sm {{ 'btn-primary' if item['completado'] else 'btn-outline-primary' }} btn-marcar ms-2"
+                                                    data-id="{{ item['id'] }}"
+                                                    data-completado="{{ 'true' if item['completado'] else 'false' }}">
+                                                {% if item['completado'] %}
+                                                    <i class="fas fa-check me-1"></i>Completado
+                                                {% else %}
+                                                    Marcar
+                                                {% endif %}
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    {% if not ejercicios and not estudios %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <div class="mb-3">
+                    <i class="fas fa-calendar-check fa-3x text-muted"></i>
+                </div>
+                <h5 class="text-muted">No tienes rutinas programadas para hoy</h5>
+                <p class="text-muted">Ve a la sección de planificador para programar actividades</p>
+                <a href="{{ url_for('planificador') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Planificar actividades
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

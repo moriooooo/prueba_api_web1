@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Rutinas{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/crear_rutina.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Header moderno -->
+<div class="text-center mb-5">
+  <h2 class="text-primary fs-3 fw-bold mb-2">Mis Rutinas</h2>
+  <p class="text-muted fs-6">Gestiona y organiza todas tus rutinas</p>
+</div>
+
+{% if rutinas %}
+  <div class="row g-4">
+    {% for r in rutinas %}
+    <div class="col-lg-6 col-xl-4">
+      <div class="card border-0 shadow-sm h-100" style="transition: transform 0.3s ease, box-shadow 0.3s ease;">
+        <div class="card-header text-center text-white border-0 bg-primary" style="padding: 1rem;">
+          <h5 class="mb-0 fw-semibold">{{ r.nombre }}</h5>
+        </div>
+        <div class="card-body p-4">
+          <div class="mb-3">
+            <div class="d-flex align-items-center mb-2">
+              <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                <i class="fas fa-clock text-primary"></i>
+              </div>
+              <span class="text-muted fw-medium">{{ r.duracion_horas }}h {{ r.duracion_minutos }}m</span>
+            </div>
+            
+            <div class="d-flex align-items-center mb-2">
+              <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
+                <i class="fas fa-calendar text-info"></i>
+              </div>
+              <span class="text-muted fw-medium">{{ r.dias }}</span>
+            </div>
+            
+            <div class="d-flex align-items-center mb-2">
+              <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
+                <i class="fas fa-clock text-warning"></i>
+              </div>
+              <span class="text-muted fw-medium">
+                {% if r.horario %}
+                  {{ r.horario }}
+                {% else %}
+                  <span class="text-muted">Sin horario definido</span>
+                {% endif %}
+              </span>
+            </div>
+            
+            <div class="d-flex align-items-center">
+              <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                <i class="fas fa-tag text-success"></i>
+              </div>
+              <span class="badge bg-light text-dark border px-3 py-2">{{ r.tipo|title }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent border-0 p-4 pt-0">
+          <div class="d-grid gap-2">
+            <div class="row g-2">
+              <div class="col-4">
+                <a href="{{ url_for('ver_rutina', id_rutina=r.id) }}" class="btn btn-outline-info w-100 py-2">
+                  <i class="fas fa-eye"></i>
+                  <span class="d-none d-sm-inline ms-1">Ver</span>
+                </a>
+              </div>
+              <div class="col-4">
+                <a href="{{ url_for('editar_rutina_completa', id_rutina=r.id) }}" class="btn btn-outline-primary w-100 py-2">
+                  <i class="fas fa-edit"></i>
+                  <span class="d-none d-sm-inline ms-1">Editar</span>
+                </a>
+              </div>
+              <div class="col-4">
+                <a href="{{ url_for('eliminar_rutina', id_rutina=r.id) }}" class="btn btn-outline-danger w-100 py-2" onclick="return confirm('¿Seguro que deseas eliminar esta rutina?');">
+                  <i class="fas fa-trash"></i>
+                  <span class="d-none d-sm-inline ms-1">Eliminar</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+      <div class="card border-0 shadow-sm text-center">
+        <div class="card-body p-5">
+          <div class="mb-4">
+            <i class="fas fa-plus-circle text-muted" style="font-size: 4rem;"></i>
+          </div>
+          <h5 class="text-muted mb-3">No tienes rutinas creadas todavía</h5>
+          <p class="text-muted mb-4">
+            ¡Crea tu primera rutina para comenzar tu viaje hacia la productividad y constancia!
+          </p>
+          <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{{ url_for('crear_rutina') }}" class="btn btn-primary btn-lg">
+              <i class="fas fa-plus me-2"></i>Crear rutina
+            </a>
+            <a href="{{ url_for('inicio') }}" class="btn btn-outline-primary btn-lg">
+              <i class="fas fa-home me-2"></i>Ir al inicio
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

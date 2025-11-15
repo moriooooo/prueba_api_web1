@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Admin - FocusFit{% endblock %}</title>
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='img/logo_blanco.png') }}" type="image/png">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    <!-- Fuentes -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- CSS personalizado -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        padding-top: 70px; /* Espacio para navbar fija */
+        background-color: #1a1d23; /* Fondo oscuro para el body */
+        color: #e9ecef;
+      }
+      
+      /* Header con estilo similar a la página principal */
+      .admin-navbar {
+        background: linear-gradient(135deg, #295bbe 0%, #4a90e2 100%);
+        box-shadow: 0 2px 12px rgba(41, 91, 190, 0.15);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        min-height: 70px;
+        z-index: 1050;
+      }
+      
+      .admin-navbar .navbar-brand {
+        color: white !important;
+        font-weight: 700;
+        font-size: 1.4rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+      }
+      
+      .admin-navbar .navbar-brand:hover {
+        color: #ffd966 !important;
+        transition: color 0.3s ease;
+      }
+      
+      .admin-navbar .navbar-brand img {
+        height: 40px;
+        width: 40px;
+        margin-right: 12px;
+      }
+      
+      .admin-badge-text {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.8);
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        margin-left: 8px;
+        font-weight: 500;
+      }
+      
+      /* Botones del navbar */
+      .admin-nav-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        position: relative;
+        margin: 0 4px;
+      }
+      
+      .admin-nav-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        transform: translateY(-1px);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+      
+      .admin-notif-btn {
+        font-size: 1.2rem;
+      }
+      
+      .admin-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #dc3545;
+        color: white;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+      }
+      
+      /* Avatar en navbar */
+      .admin-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+      }
+      
+      .admin-avatar:hover {
+        border-color: rgba(255, 255, 255, 0.6);
+        transform: scale(1.05);
+      }
+      
+      /* Dropdown menu */
+      .dropdown-menu {
+        border: none;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-top: 8px;
+        background-color: #2d3748;
+        border: 1px solid #4a5568;
+      }
+      
+      .dropdown-item {
+        padding: 12px 20px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        color: #e2e8f0;
+      }
+      
+      .dropdown-item:hover {
+        background: linear-gradient(135deg, #295bbe 0%, #4a90e2 100%);
+        color: white;
+      }
+      
+      .dropdown-item.text-danger {
+        color: #fc8181 !important;
+      }
+      
+      .dropdown-item.text-danger:hover {
+        background: #e53e3e;
+        color: white !important;
+      }
+      
+      .dropdown-header {
+        color: #a0aec0 !important;
+        font-size: 0.875rem;
+      }
+      
+      .dropdown-divider {
+        border-color: #4a5568;
+      }
+      
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .admin-navbar .navbar-brand {
+          font-size: 1.2rem;
+        }
+        
+        .admin-navbar .navbar-brand img {
+          height: 32px;
+          width: 32px;
+        }
+        
+        .admin-badge-text {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body class="admin-body">
+
+    <!-- Header estilo FocusFit principal -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top admin-navbar">
+      <div class="container-fluid px-3">
+        <a class="navbar-brand" href="{{ url_for('admin.dashboard') }}">
+          <img src="{{ url_for('static', filename='img/logo_blanco.png') }}" alt="Logo FocusFit">
+          <span>Focus Fit</span>
+          <span class="admin-badge-text">Admin</span>
+        </a>
+        
+        <div class="d-flex align-items-center gap-2">
+          <!-- Botón de notificaciones -->
+          <a href="{{ url_for('admin.notifications') }}" class="admin-nav-btn admin-notif-btn position-relative">
+            <i class="fas fa-bell"></i>
+            {% if admin_unread_notifications and admin_unread_notifications > 0 %}
+              <span class="admin-badge">{{ admin_unread_notifications }}</span>
+            {% endif %}
+          </a>
+          
+          <!-- Dropdown de usuario -->
+          <div class="dropdown">
+            <a class="d-flex align-items-center text-decoration-none dropdown-toggle admin-nav-btn" href="#" role="button" id="adminMenu" data-bs-toggle="dropdown" aria-expanded="false">
+              <img src="{{ url_for('static', filename='img/logo_blanco.png') }}" alt="avatar" class="admin-avatar me-2">
+              <span class="d-none d-md-inline">Admin</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminMenu">
+              <li><h6 class="dropdown-header"><i class="fas fa-user-shield me-2"></i>Panel de Administración</h6></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('admin.perfil') }}"><i class="fas fa-user-cog me-2"></i>Mi Perfil</a></li>
+              <li><a class="dropdown-item" href="/"><i class="fas fa-home me-2"></i>Ver Sitio Principal</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="{{ url_for('admin.logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Cerrar sesión</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Layout principal con sidebar mejorado -->
+    <div class="d-flex admin-layout">
+      <aside class="admin-sidebar shadow-sm">
+        <div class="p-3">
+          <h6 class="text-muted text-uppercase fw-bold mb-3" style="font-size: 0.75rem; letter-spacing: 1px;">
+            <i class="fas fa-cogs me-2"></i>Panel de Control
+          </h6>
+          <nav class="nav flex-column">
+            {% for item in admin_sidebar %}
+              <a class="nav-link admin-sidebar-link py-2 mb-1" href="{{ item.href }}">
+                <i class="fas fa-{{ 'chart-line' if 'dashboard' in item.href else 'users' if 'community' in item.href else 'bullhorn' if 'content' in item.href else 'star' if 'recommendations' in item.href else 'envelope' if 'messages' in item.href else 'cog' }} me-2"></i>
+                {{ item.text }}
+              </a>
+            {% endfor %}
+          </nav>
+          <div class="mt-4 p-3 bg-light rounded" style="font-size: 0.85rem;">
+            <div class="d-flex align-items-center text-muted mb-2">
+              <i class="fas fa-shield-alt me-2 text-primary"></i>
+              <strong>Gestión Avanzada</strong>
+            </div>
+            <p class="mb-0 text-muted">Panel de administración para gestionar contenido, usuarios y configuraciones del sistema.</p>
+          </div>
+        </div>
+      </aside>
+
+      <main class="admin-main flex-grow-1">
+        <div class="container-fluid p-4">
+          <!-- Breadcrumbs mejorados -->
+          <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item">
+                <a href="{{ url_for('admin.dashboard') }}" class="text-decoration-none">
+                  <i class="fas fa-home me-1"></i>Admin
+                </a>
+              </li>
+              <li class="breadcrumb-item active" aria-current="page">
+                {% block breadcrumb %}Dashboard{% endblock %}
+              </li>
+            </ol>
+          </nav>
+
+          <!-- Flash messages mejorados -->
+          {% set messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, msg in messages %}
+              <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show mb-4" role="alert">
+                <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                {{ msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          {% block content %}{% endblock %}
+        </div>
+      </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script para notificaciones mejorado -->
+    <script>
+      (function(){
+        const url = "{{ url_for('admin.notifications') }}";
+        async function fetchCount(){
+          try{
+            const res = await fetch(url);
+            if(!res.ok) return;
+            const data = await res.json();
+            const badge = document.querySelector('.admin-badge');
+            if(Array.isArray(data)){
+              const count = data.filter(n => !n.is_read).length || 0;
+              if(count > 0){
+                if(badge) {
+                  badge.textContent = count;
+                } else {
+                  const a = document.querySelector('.admin-notif-btn');
+                  if(a){ 
+                    const span = document.createElement('span'); 
+                    span.className='admin-badge'; 
+                    span.textContent=count; 
+                    a.appendChild(span); 
+                  }
+                }
+              } else if(badge){ 
+                badge.remove(); 
+              }
+            }
+          }catch(e){ 
+            console.warn('Error polling notifications:', e); 
+          }
+        }
+        
+        // Polling cada 10 segundos
+        setInterval(fetchCount, 10000);
+        document.addEventListener('DOMContentLoaded', fetchCount);
+        
+        // Auto-cerrar alerts después de 5 segundos
+        setTimeout(function(){
+          const alerts = document.querySelectorAll('.alert');
+          alerts.forEach(alert => {
+            if(alert.classList.contains('show')){
+              const bsAlert = new bootstrap.Alert(alert);
+              bsAlert.close();
+            }
+          });
+        }, 5000);
+      })();
+    </script>
+
+    <!-- Estilos adicionales para sidebar y tema oscuro -->
+    <style>
+      .admin-layout {
+        min-height: calc(100vh - 70px);
+        background-color: #1a1d23;
+      }
+      
+      .admin-sidebar {
+        width: 280px;
+        background: #2d3748;
+        border-right: 1px solid #4a5568;
+        min-height: calc(100vh - 70px);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+      }
+      
+      .admin-sidebar h6 {
+        color: #a0aec0 !important;
+        font-size: 0.75rem;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        border-bottom: 1px solid #4a5568;
+        padding-bottom: 8px;
+      }
+      
+      .admin-sidebar-link {
+        color: #e2e8f0 !important;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        padding: 12px 16px !important;
+        margin-bottom: 4px;
+        background: transparent;
+      }
+      
+      .admin-sidebar-link:hover,
+      .admin-sidebar-link.active {
+        background: linear-gradient(135deg, #295bbe 0%, #4a90e2 100%);
+        color: white !important;
+        transform: translateX(4px);
+        box-shadow: 0 4px 12px rgba(41, 91, 190, 0.3);
+      }
+      
+      .admin-sidebar-link i {
+        width: 18px;
+        text-align: center;
+        opacity: 0.8;
+      }
+      
+      .admin-sidebar .bg-light {
+        background: #374151 !important;
+        border: 1px solid #4a5568;
+        border-radius: 12px;
+      }
+      
+      .admin-sidebar .text-muted {
+        color: #9ca3af !important;
+      }
+      
+      .admin-sidebar .text-primary {
+        color: #60a5fa !important;
+      }
+      
+      .admin-main {
+        background: #1a1d23;
+        color: #e9ecef;
+      }
+      
+      /* Breadcrumbs tema oscuro */
+      .breadcrumb {
+        background: rgba(45, 55, 72, 0.6);
+        border-radius: 8px;
+        padding: 12px 16px;
+        border: 1px solid #4a5568;
+      }
+      
+      .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        color: #9ca3af;
+      }
+      
+      .breadcrumb-item a {
+        color: #60a5fa;
+        font-weight: 500;
+        text-decoration: none;
+      }
+      
+      .breadcrumb-item a:hover {
+        color: #93c5fd;
+      }
+      
+      .breadcrumb-item.active {
+        color: #e2e8f0;
+        font-weight: 600;
+      }
+      
+      /* Cards y contenido oscuro */
+      .card {
+        background-color: #2d3748;
+        border: 1px solid #4a5568;
+        color: #e2e8f0;
+      }
+      
+      .card-header {
+        background-color: #374151;
+        border-bottom: 1px solid #4a5568;
+        color: #f7fafc;
+      }
+      
+      .table-dark {
+        --bs-table-bg: #2d3748;
+        --bs-table-border-color: #4a5568;
+      }
+      
+      .table-dark th,
+      .table-dark td {
+        border-color: #4a5568;
+      }
+      
+      /* Botones tema oscuro */
+      .btn-primary {
+        background: linear-gradient(135deg, #295bbe 0%, #4a90e2 100%);
+        border: none;
+        box-shadow: 0 4px 12px rgba(41, 91, 190, 0.3);
+      }
+      
+      .btn-primary:hover {
+        background: linear-gradient(135deg, #2c5aa0 0%, #357abd 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(41, 91, 190, 0.4);
+      }
+      
+      .btn-secondary {
+        background-color: #4a5568;
+        border-color: #4a5568;
+        color: #e2e8f0;
+      }
+      
+      .btn-secondary:hover {
+        background-color: #718096;
+        border-color: #718096;
+        color: white;
+      }
+      
+      .btn-danger {
+        background-color: #e53e3e;
+        border-color: #e53e3e;
+      }
+      
+      .btn-danger:hover {
+        background-color: #c53030;
+        border-color: #c53030;
+      }
+      
+      /* Forms tema oscuro */
+      .form-control {
+        background-color: #2d3748;
+        border: 1px solid #4a5568;
+        color: #e2e8f0;
+      }
+      
+      .form-control:focus {
+        background-color: #2d3748;
+        border-color: #4a90e2;
+        color: #e2e8f0;
+        box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+      }
+      
+      .form-label {
+        color: #e2e8f0;
+        font-weight: 500;
+      }
+      
+      .form-select {
+        background-color: #2d3748;
+        border: 1px solid #4a5568;
+        color: #e2e8f0;
+      }
+      
+      .form-select:focus {
+        background-color: #2d3748;
+        border-color: #4a90e2;
+        color: #e2e8f0;
+        box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+      }
+      
+      /* Alerts tema oscuro */
+      .alert-success {
+        background-color: #2f855a;
+        border-color: #38a169;
+        color: #f0fff4;
+      }
+      
+      .alert-danger {
+        background-color: #c53030;
+        border-color: #e53e3e;
+        color: #fed7d7;
+      }
+      
+      .alert-warning {
+        background-color: #d69e2e;
+        border-color: #ecc94b;
+        color: #fefcbf;
+      }
+      
+      .alert-info {
+        background-color: #2c5aa0;
+        border-color: #4a90e2;
+        color: #bee3f8;
+      }
+      
+      /* Modals tema oscuro */
+      .modal-content {
+        background-color: #2d3748;
+        border: 1px solid #4a5568;
+        color: #e2e8f0;
+      }
+      
+      .modal-header {
+        border-bottom: 1px solid #4a5568;
+      }
+      
+      .modal-footer {
+        border-top: 1px solid #4a5568;
+      }
+      
+      .btn-close {
+        filter: invert(1);
+      }
+      
+      /* Text colors */
+      .text-muted {
+        color: #9ca3af !important;
+      }
+      
+      .text-primary {
+        color: #60a5fa !important;
+      }
+      
+      .text-success {
+        color: #68d391 !important;
+      }
+      
+      .text-danger {
+        color: #fc8181 !important;
+      }
+      
+      .text-warning {
+        color: #f6e05e !important;
+      }
+      
+      @media (max-width: 768px) {
+        .admin-sidebar {
+          width: 250px;
+        }
+      }
+      
+      @media (max-width: 576px) {
+        .admin-layout {
+          flex-direction: column;
+        }
+        
+        .admin-sidebar {
+          width: 100%;
+          min-height: auto;
+        }
+      }
+    </style>
+  </body>
+</html>

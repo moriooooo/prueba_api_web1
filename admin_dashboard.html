@@ -1,0 +1,250 @@
+{% extends 'admin/admin_layout.html' %}
+{% block title %}Admin - Dashboard{% endblock %}
+{% block content %}
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-0">Dashboard Administrativo</h1>
+      <p class="text-muted mb-0">Panel de control para administrar FocusFit</p>
+    </div>
+    <div class="text-end">
+      <small class="text-muted">Última actualización: <span id="lastUpdate"></span></small>
+    </div>
+  </div>
+
+  <!-- Métricas principales -->
+  <div class="row g-4 mb-4">
+    <div class="col-xl-2-4 col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-primary fw-semibold mb-1">
+                <i class="fas fa-users me-2"></i>Usuarios Totales
+              </div>
+              <div class="h2 mb-0 fw-bold">{{ stats.usuarios or 0 }}</div>
+              <small class="text-success">
+                <i class="fas fa-arrow-up me-1"></i>{{ stats.usuarios_activos_mes or 0 }} nuevos este mes
+              </small>
+            </div>
+            <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+              <i class="fas fa-users text-primary fs-4"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2-4 col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-success fw-semibold mb-1">
+                <i class="fas fa-dumbbell me-2"></i>Rutinas
+              </div>
+              <div class="h2 mb-0 fw-bold">{{ stats.total_rutinas or 0 }}</div>
+              <small class="text-muted">
+                <span class="text-success">{{ stats.rutinas_publicas or 0 }} compartidas</span>
+              </small>
+            </div>
+            <div class="bg-success bg-opacity-10 rounded-circle p-3">
+              <i class="fas fa-dumbbell text-success fs-4"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2-4 col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-info fw-semibold mb-1">
+                <i class="fas fa-lightbulb me-2"></i>Recomendaciones
+              </div>
+              <div class="h2 mb-0 fw-bold">{{ stats.total_recomendaciones or 0 }}</div>
+              <small class="text-muted">
+                <span class="text-info">{{ stats.recomendaciones_publicas or 0 }} públicas</span>
+              </small>
+            </div>
+            <div class="bg-info bg-opacity-10 rounded-circle p-3">
+              <i class="fas fa-lightbulb text-info fs-4"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2-4 col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-purple fw-semibold mb-1">
+                <i class="fas fa-comments me-2"></i>Posts Comunidad
+              </div>
+              <div class="h2 mb-0 fw-bold">{{ (stats.publicaciones_pendientes + stats.publicaciones_aprobadas) or 0 }}</div>
+              <small class="text-muted">
+                <span class="text-success">{{ stats.publicaciones_aprobadas or 0 }} aprobados</span> | 
+                <span class="text-warning">{{ stats.publicaciones_pendientes or 0 }} pendientes</span>
+              </small>
+            </div>
+            <div class="bg-purple bg-opacity-10 rounded-circle p-3">
+              <i class="fas fa-comments text-purple fs-4"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2-4 col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="text-danger fw-semibold mb-1">
+                <i class="fas fa-bell me-2"></i>Notificaciones
+              </div>
+              <div class="h2 mb-0 fw-bold">{{ stats.notificaciones or 0 }}</div>
+              <small class="text-muted">
+                Sin leer
+              </small>
+            </div>
+            <div class="bg-danger bg-opacity-10 rounded-circle p-3">
+              <i class="fas fa-bell text-danger fs-4"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección de alertas y acciones -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-12">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-transparent border-0 pb-0">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-shield-alt text-primary me-2"></i>Acciones de Moderación
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <div class="d-grid">
+                <a href="{{ url_for('admin.admin_community_posts') }}" class="btn btn-outline-primary">
+                  <i class="fas fa-comments me-2"></i>Gestionar Comunidad
+                  {% if stats.publicaciones_pendientes > 0 %}
+                    <span class="badge bg-warning ms-2">{{ stats.publicaciones_pendientes }}</span>
+                  {% endif %}
+                </a>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="d-grid">
+                <a href="{{ url_for('admin.content_manager', type='recommendation') }}" class="btn btn-outline-success">
+                  <i class="fas fa-star me-2"></i>Gestionar Recomendaciones
+                </a>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="d-grid">
+                <a href="{{ url_for('admin.content_manager') }}" class="btn btn-outline-info">
+                  <i class="fas fa-file-alt me-2"></i>Gestionar Contenido
+                  <span class="badge bg-info ms-2">{{ stats.contenido_admin }}</span>
+                </a>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="d-grid">
+                <a href="{{ url_for('admin.perfil') }}" class="btn btn-outline-secondary">
+                  <i class="fas fa-user-cog me-2"></i>Configuración Admin
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estadísticas adicionales -->
+  <div class="row g-4">
+    <div class="col-md-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-transparent border-0 pb-0">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-chart-line text-success me-2"></i>Resumen del Sistema
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-md-2">
+              <div class="border-end pe-3">
+                <div class="h4 text-primary mb-0">{{ stats.usuarios or 0 }}</div>
+                <small class="text-muted">Usuarios</small>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="border-end pe-3">
+                <div class="h4 text-success mb-0">{{ stats.total_rutinas or 0 }}</div>
+                <small class="text-muted">Rutinas</small>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="border-end pe-3">
+                <div class="h4 text-info mb-0">{{ stats.total_recomendaciones or 0 }}</div>
+                <small class="text-muted">Recomendaciones</small>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="border-end pe-3">
+                <div class="h4 text-purple mb-0">{{ (stats.publicaciones_pendientes + stats.publicaciones_aprobadas) or 0 }}</div>
+                <small class="text-muted">Posts Comunidad</small>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="border-end pe-3">
+                <div class="h4 text-secondary mb-0">{{ stats.contenido_admin or 0 }}</div>
+                <small class="text-muted">Contenido Admin</small>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="h4 text-danger mb-0">{{ stats.notificaciones or 0 }}</div>
+              <small class="text-muted">Notificaciones</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Actualización automática (opcional) -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar hora actual
+    function updateTime() {
+        const now = new Date();
+        const options = { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        };
+        document.getElementById('lastUpdate').textContent = now.toLocaleString('es-ES', options);
+    }
+    
+    updateTime();
+    
+    // Actualizar página cada 5 minutos para mantener datos frescos
+    setTimeout(function() {
+        window.location.reload();
+    }, 300000); // 5 minutos
+});
+</script>
+{% endblock %}

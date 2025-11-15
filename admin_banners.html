@@ -1,0 +1,20 @@
+{% extends 'admin/admin_layout.html' %}
+{% block title %}Banners{% endblock %}
+{% block content %}
+  <h2>Banners</h2>
+  <div class="list-group">
+    {% for b in banners %}
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <div class="fw-bold">{{ b.titulo or b.title }}</div>
+          <div class="small text-muted">{{ b.actualizado_en }}</div>
+        </div>
+        {% if b.url_imagen %}
+          <img src="{{ url_for('static', filename='img/admin_avatars/' ~ b.url_imagen) }}" style="max-width:160px" class="rounded">
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="list-group-item">No hay banners</div>
+    {% endfor %}
+  </div>
+{% endblock %}
