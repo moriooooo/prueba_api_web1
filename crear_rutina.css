@@ -1,0 +1,154 @@
+
+/* ================= Estilos generales ================= */
+.section-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ================= Días tipo calendario ================= */
+.dias-calendario {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px;
+    margin-top: 1rem;
+}
+
+.dia {
+    background-color: #ffffff;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 15px 8px;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    user-select: none;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.dia:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15);
+    border-color: #007bff;
+}
+
+.dia.seleccionado {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    border-color: #0056b3;
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
+}
+
+.dia span {
+    font-weight: 600;
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+
+.dia small {
+    font-size: 0.7rem;
+    opacity: 0.8;
+    margin-top: 2px;
+}
+
+.dia.seleccionado small {
+    opacity: 0.9;
+}
+
+/* ================= Items de rutina ================= */
+#itemsContainer {
+    min-height: 60px;
+}
+
+#itemsContainer:empty::before {
+    content: "Agrega actividades a tu rutina usando el botón de arriba";
+    display: block;
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 3rem 1rem;
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    background-color: #f8f9fa;
+}
+
+.activity-card {
+    transition: all 0.3s ease;
+}
+
+.activity-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+}
+
+/* ================= Form improvements ================= */
+.form-control:focus,
+.form-select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-control-lg {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+}
+
+.form-select-lg {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+}
+
+.error-msg {
+    display: none;
+}
+
+/* ================= Responsive Design ================= */
+@media (max-width: 1024px) {
+    .dias-calendario {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+    }
+    
+    .dia {
+        min-height: 70px;
+        padding: 12px 6px;
+    }
+}
+
+@media (max-width: 768px) {
+    .dias-calendario {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    
+    .dia {
+        min-height: 60px;
+        padding: 10px 4px;
+    }
+    
+    .dia span {
+        font-size: 0.8rem;
+    }
+    
+    .dia small {
+        font-size: 0.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dias-calendario {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}

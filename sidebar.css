@@ -1,0 +1,395 @@
+/* ================= Sidebar ================= */
+.sidebar-custom {
+  background-color: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  width: 260px;
+  height: calc(100vh - 56px); /* Ajustado para el nuevo navbar */
+  max-height: calc(100vh - 56px);
+  padding: 1rem 0.75rem 1.5rem 0.75rem;
+  position: fixed;
+  left: 0;
+  top: 56px; /* Ajustado para el nuevo navbar */
+  box-sizing: border-box;
+  z-index: 1020;
+  transition: all 0.3s ease;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+  
+  /* Personalizar scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+/* Desactivar transiciones durante inicialización */
+.sidebar-custom.no-transition,
+.sidebar-custom.no-transition *,
+.container.no-transition,
+.sidebar-overlay.no-transition {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Personalizar scrollbar para webkit */
+.sidebar-custom::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-custom::-webkit-scrollbar-track {
+  background: #f7fafc;
+  border-radius: 3px;
+}
+
+.sidebar-custom::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+.sidebar-custom::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Sidebar colapsada - solo iconos */
+.sidebar-custom.collapsed {
+  width: 80px;
+  padding-top: 1rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  height: calc(100vh - 56px); /* Ajustado para el nuevo navbar */
+  top: 56px; /* Ajustado para el nuevo navbar */
+  z-index: 1020;
+}
+
+/* Sidebar colapsada pero expandida temporalmente */
+.sidebar-custom.collapsed.show {
+  width: 260px;
+  height: 100vh;
+  top: 0;
+  z-index: 1060;
+  padding-top: 90px;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+/* Indicador visual en la parte superior solo cuando sidebar colapsada se superpone */
+.sidebar-custom.collapsed.show::before {
+  content: '';
+  position: absolute;
+  top: 72px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, #e0e0e0, transparent);
+  z-index: 1;
+}
+
+/* Overlay para móvil */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1065;
+  display: none;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+.sidebar-overlay.show {
+  display: block;
+  opacity: 1;
+}
+
+/* Responsive: en pantallas pequeñas automáticamente colapsar */
+@media (max-width: 1200px) {
+  .sidebar-custom {
+    width: 80px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  
+  .sidebar-custom .link-text {
+    display: none;
+  }
+  
+  .sidebar-custom .nav-link {
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .sidebar-custom .nav-link .me-2 {
+    margin-right: 0 !important;
+    font-size: 1.5rem;
+  }
+  
+  .sidebar-custom.show {
+    width: 260px;
+    height: 100vh;
+    top: 0;
+    z-index: 1060;
+    padding-top: 90px;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.3);
+  }
+  
+  .sidebar-custom.show .link-text {
+    display: inline;
+  }
+  
+  .sidebar-custom.show .nav-link {
+    justify-content: flex-start;
+    padding: 0.75rem 1rem;
+  }
+  
+  .sidebar-custom.show .nav-link .me-2 {
+    margin-right: 0.5rem !important;
+    font-size: 1.2rem;
+  }
+}
+
+/* Responsive: móvil */
+@media (max-width: 992px) {
+  .sidebar-custom {
+    transform: translateX(-100%);
+    width: 260px;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    top: 0 !important;
+    z-index: 1070;
+    padding: 1rem 0.75rem 1.5rem 0.75rem;
+  }
+  
+  .sidebar-custom.show {
+    transform: translateX(0);
+    width: 260px;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    top: 0 !important;
+    z-index: 1070;
+    padding: 1rem 0.75rem 1.5rem 0.75rem;
+  }
+}
+
+/* Responsive adicional para pantallas muy pequeñas */
+@media (max-width: 768px) {
+  .sidebar-custom {
+    padding: 0.75rem 0.5rem 1rem 0.5rem;
+  }
+  
+  .sidebar-custom.show {
+    padding: 0.75rem 0.5rem 1rem 0.5rem;
+  }
+}
+
+
+/* Links */
+.sidebar-custom .nav-link {
+  color: #495057;
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  margin: 0.2rem 0;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  text-decoration: none;
+}
+
+/* Links en sidebar colapsada */
+.sidebar-custom.collapsed .nav-link {
+  padding: 0.75rem 0.5rem;
+  justify-content: center;
+  position: relative;
+  margin: 0.2rem 0;
+}
+
+.sidebar-custom.collapsed .nav-link .link-text {
+  display: none;
+}
+
+.sidebar-custom.collapsed .nav-link .me-2 {
+  margin-right: 0 !important;
+  font-size: 1.5rem;
+}
+
+/* Tooltip para sidebar colapsada */
+.sidebar-custom.collapsed .nav-link:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 70px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #333;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  z-index: 1000;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  pointer-events: none;
+}
+
+.sidebar-custom.collapsed .nav-link:hover::before {
+  content: '';
+  position: absolute;
+  left: 62px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: #333;
+  z-index: 1001;
+  pointer-events: none;
+}
+
+/* Iconos dentro de links */
+.sidebar-custom .nav-link span {
+  font-size: 1.2rem;
+}
+
+/* Hover y activo */
+.sidebar-custom .nav-link:hover {
+  background-color: #e7f1ff;
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.sidebar-custom .nav-link.active {
+  background-color: #0d6efd;
+  color: white;
+}
+
+/* Separadores */
+.sidebar-custom hr {
+  margin: 1rem 0;
+  border-color: #e0e0e0;
+  flex-shrink: 0;
+}
+
+/* Separadores en modo colapsado */
+.sidebar-custom.collapsed hr {
+  margin: 0.5rem 0;
+}
+
+/* Badge de notificaciones */
+.sidebar-custom .badge {
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-custom.collapsed .badge {
+  display: none;
+}
+
+/* Mejoras para el scroll y zoom */
+.sidebar-custom ul {
+  flex-shrink: 0;
+  padding-bottom: 0.5rem;
+}
+
+.sidebar-custom .nav-pills {
+  margin-bottom: 0.5rem !important;
+}
+
+/* Asegurar que el último elemento tenga espacio */
+.sidebar-custom li:last-child {
+  margin-bottom: 0.5rem;
+}
+
+/* Mejoras para la transición */
+.sidebar-custom * {
+  transition: all 0.3s ease;
+}
+
+/* Estilo del contenido cuando sidebar está colapsada */
+@media (min-width: 993px) {
+  .content-expanded {
+    margin-left: 260px;
+  }
+  
+  .content-collapsed {
+    margin-left: 80px;
+  }
+}
+
+/* Animación suave para el overlay */
+.sidebar-overlay {
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+.sidebar-overlay.show {
+  opacity: 1;
+}
+
+/* Mejoras para accesibilidad */
+.sidebar-custom:focus-within {
+  box-shadow: 2px 0 8px rgba(41, 91, 190, 0.3);
+}
+
+/* Asegurar transiciones suaves */
+.sidebar-custom * {
+  transition: all 0.3s ease;
+}
+
+/* Mejoras específicas para zoom alto */
+@media (max-height: 600px) {
+  .sidebar-custom.show {
+    padding-top: 80px;
+  }
+  
+  .sidebar-custom.collapsed.show::before {
+    top: 65px;
+  }
+  
+  .sidebar-custom .nav-link {
+    padding: 0.5rem 1rem;
+    margin: 0.1rem 0;
+  }
+  
+  .sidebar-custom hr {
+    margin: 0.5rem 0;
+  }
+  
+  .sidebar-custom ul {
+    margin-bottom: 0.25rem !important;
+  }
+}
+
+/* Para pantallas muy pequeñas o zoom muy alto */
+@media (max-height: 400px) {
+  .sidebar-custom {
+    font-size: 0.875rem;
+  }
+  
+  .sidebar-custom.show {
+    padding-top: 70px;
+  }
+  
+  .sidebar-custom.collapsed.show::before {
+    top: 55px;
+  }
+  
+  .sidebar-custom .nav-link {
+    padding: 0.4rem 0.8rem;
+    margin: 0.05rem 0;
+  }
+  
+  .sidebar-custom .nav-link span {
+    font-size: 1rem;
+  }
+}
+
+/* Asegurar que el scroll funcione bien en todos los navegadores */
+.sidebar-custom {
+  -webkit-overflow-scrolling: touch;
+}
+
